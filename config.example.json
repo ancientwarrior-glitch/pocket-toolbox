@@ -1,0 +1,13 @@
+{
+  "title": "Pocket Toolbox",
+  "project_name": "My Project",
+  "currency": "MXN",
+  "books_folder": "~/storage/shared/Books",
+  "downloads_folder": "~/storage/downloads",
+  "media_folder": "~/storage/shared/Pocket-Toolbox-Media",
+  "color": true,
+  "video_height": 360,
+  "peertube_hosts": [],
+  "feeds": [],
+  "shortcuts": {}
+}
