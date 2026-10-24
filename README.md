@@ -31,17 +31,17 @@ If `$HOME/pocket-toolbox` already exists, do not delete it blindly. For an exist
 checkout of this repository, update with `git -C "$HOME/pocket-toolbox" pull --ff-only`
 and rerun its installer. Existing installed settings and records are preserved.
 
-### Install from the downloadable starter ZIP
+### Install from GitHub’s downloadable ZIP
 
 1. Install Termux from a source listed in the official project documentation: https://github.com/termux/termux-app#installation . This kit targets the F-Droid/GitHub Termux environment with Python 3.10 or later; Android 7+ is the project baseline. Do not mix Termux add-ons from differently signed sources.
-2. Download `pocket-toolbox-0.1.0.zip` into Android's Download folder.
+2. Download the [source ZIP](https://github.com/ancientwarrior-glitch/pocket-toolbox/archive/refs/heads/main.zip) into Android’s Download folder, saving it as `pocket-toolbox-main.zip`. GitHub’s Code → Download ZIP button downloads the same source tree.
 3. In Termux, run each line separately and grant shared-storage access:
 
 ```bash
 termux-setup-storage
 pkg install -y unzip
-unzip -n ~/storage/downloads/pocket-toolbox-0.1.0.zip -d ~/pocket-toolbox-release
-bash ~/pocket-toolbox-release/pocket-toolbox/install.sh
+unzip -n ~/storage/downloads/pocket-toolbox-main.zip -d ~/pocket-toolbox-release
+bash ~/pocket-toolbox-release/pocket-toolbox-main/install.sh
 ```
 
 The extraction destination is inside Termux so file execution and permissions work predictably. If the browser renamed your ZIP, use its actual filename in the unzip command. Installer questions set your toolbox title, project name, currency label and books path. The default books directory is `~/storage/shared/Books`; choose your existing folder or create it yourself.
@@ -84,7 +84,7 @@ Grant shared-storage access with `termux-setup-storage`. If a book opens through
 
 ## Backup, restore and privacy
 
-Records/settings live under `~/.local/share/pocket-toolbox`. Backups go to `Downloads/Pocket-Toolbox-Backups`. They contain your private records, favorites, RSS state and settings; they are **not** public starter kits. Books, copied media, other phone files and the program itself are excluded. Keep this release ZIP for reinstalling the program; then restore a compatible record backup. Copy important backups/media off the phone separately.
+Records/settings live under `~/.local/share/pocket-toolbox`. Backups go to `Downloads/Pocket-Toolbox-Backups`. They contain your private records, favorites, RSS state and settings; they are **not** public starter kits. Books, copied media, other phone files and the program itself are excluded. Keep the source ZIP or repository checkout for reinstalling the program; then restore a compatible record backup. Copy important backups/media off the phone separately.
 
 Restore accepts this kit's `pocket-*.tar.gz` format only, validates members and the database, stages files, asks you to type `RESTORE`, and backs up the current state first. Matching records/settings are replaced; extra files remain. It rejects links and unsafe archive paths. A storage failure can still interrupt a multi-file restore; the pre-restore snapshot is retained. Backups from the original personalized `menu` are not compatible with this clean starter kit.
 
@@ -96,7 +96,7 @@ Run `python -m unittest discover -s tests -v` from the source folder for automat
 
 ## Share it
 
-Upload the release ZIP and optionally its customization form to a file host or repository of your choice. The ZIP is the public download; a personalized record backup is private. Nothing is automatically uploaded or published by this project. Include this README and LICENSE with redistributions.
+Share this repository or its source ZIP. The ZIP is the public download; a personalized record backup is private. Nothing is automatically uploaded or published by this project. Include this README and LICENSE with redistributions.
 
 ## Uninstall
 
