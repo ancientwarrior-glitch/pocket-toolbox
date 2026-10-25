@@ -1,4 +1,4 @@
-# Pocket Finance — 0.2.0-beta.2 for the ORIGINAL toolbox
+# Pocket Finance — 0.2.0-beta.3 for the ORIGINAL toolbox
 
 This is an additional, offline financial record system for people running the original `menu` scripts. The stable public `pocket` starter is not replaced. Finance is a set of financial workflows and reports, not an Excel cell-grid/formula editor.
 
@@ -48,6 +48,15 @@ Use the new Finance system for subsequent financial records. Its database is sep
 16. Restore a compatible finance snapshot, preserving a pre-restore copy.
 17. Import normalized trading CSV.
 18. Graphs / visual dashboard.
+19. Jabones Yayo / business board.
+
+## Business board
+
+Option 19 opens a read-only local board with searchable materials and finished stock, inventory value at recorded cost, monthly net sales versus cost of goods sold, saved production costs and batch ages, and business bills/credits to collect or pay. Its records come from Finance options 5 and 6. Older Jabones batch notes are separate and are not automatically imported.
+
+The stock list flags zero stock; it does not invent low-stock thresholds. Each quantity retains its own unit. Batch age bars have a temporary adjustable planning marker; reaching that marker does not certify soap cure or readiness. All products use the same age display, so set an appropriate marker for the batch you are reviewing. Bills have no stored due dates and are not labeled overdue. Net sales include credit sales and dated returns/reversals, rather than cash collection. Credits owed after overpayment/returns are shown separately on each bill and included in the corresponding amounts to collect/pay. Future-dated stock, batches, bills and payments are excluded from the current snapshot.
+
+Update using the commands below and choose 19. Existing records are retained.
 
 ## Graphs
 

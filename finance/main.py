@@ -374,6 +374,10 @@ class UI:
     def graphs(self):
         from charts import dashboard_data,render,serve
         serve(render(dashboard_data(self.f)))
+    def business_board(self):
+        from business_board import board_data,render_board
+        from charts import serve
+        serve(render_board(board_data(self.f)))
     def help(self):
         print('''FIRST: import old records once, then create actual cash accounts with opening balances.
 Personal and Business are separate. Transfers are not income or expenses.
@@ -404,7 +408,7 @@ Read FINANCE.md in the repository for scope, backups, restore and migration deta
                  ('Savings, investment plans and profit shares',self.plans),('Crypto holdings and portfolio',self.investments),
                  ('Trading plans, journal and linear contracts',self.trading),('Search all finance records',self.search),
                  ('Correct/void a cash entry',self.corrections),('Import original records once',self.legacy),
-                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs)]
+                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs),('Jabones Yayo / business board',self.business_board)]
         while True:
             try:
                 self.heading('FINANCE '+VERSION)
