@@ -16,7 +16,7 @@ def plan_install(package,home,prefix):
     command=prefix/'bin/finance'
     if command.exists() and MARKER not in command.read_text():raise ValueError('A different finance command already exists.')
     target=home/'bin/pocket-finance'
-    for name in ['engine.py','main.py','charts.py','business_board.py']:
+    for name in ['engine.py','main.py','charts.py','business_board.py','home_board.py']:
         compile((package/name).read_text(),str(package/name),'exec')
     run='["python", str(Path.home() / "bin/pocket-finance/main.py")'
     changes=[]
@@ -51,6 +51,22 @@ def plan_install(package,home,prefix):
         updated=text.replace('actions = [',overrides+'actions = [',1)
         if 'import subprocess' not in text:updated='import subprocess\n'+updated
         compile(updated,str(path),'exec');changes.append((path,updated))
+    dashboard=home/'bin/toolbox-home.py'
+    board_marker='# Pocket visual dashboard add-on'
+    if dashboard.exists() and board_marker not in dashboard.read_text():
+        text=dashboard.read_text()
+        prefix_code=(board_marker+'\nimport sys as _board_sys\n'
+                     'if len(_board_sys.argv) < 2 or _board_sys.argv[1] != "help":\n'
+                     '    from pathlib import Path as _BoardPath\n'
+                     '    import subprocess as _board_subprocess\n'
+                     '    _board_subprocess.run([_board_sys.executable, str(_BoardPath.home() / "bin/pocket-finance/main.py"), "--board"])\n'
+                     '    raise SystemExit\n\n')
+        if text.startswith('#!'):
+            first,separator,text=text.partition('\n')
+            updated=first+separator+prefix_code+text
+        else:updated=prefix_code+text
+        compile(updated,str(dashboard),'exec')
+        changes.append((dashboard,updated))
     return target,command,changes
 
 def install(package,home,prefix):
@@ -65,7 +81,7 @@ def install(package,home,prefix):
     purchase=legacy.with_name('purchases.csv')
     if purchase.exists():shutil.copy2(purchase,backup/'original-purchases.csv')
     target.mkdir(parents=True,exist_ok=True)
-    for name in ['engine.py','main.py','charts.py','business_board.py']:
+    for name in ['engine.py','main.py','charts.py','business_board.py','home_board.py']:
         installed=target/name
         if installed.exists():shutil.copy2(installed,backup/('previous-'+name))
         shutil.copy2(package/name,installed)

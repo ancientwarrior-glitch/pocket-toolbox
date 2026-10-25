@@ -8,7 +8,7 @@ import hashlib
 import json
 import sqlite3
 
-VERSION = '0.2.0-beta.3'
+VERSION = '0.2.0-beta.4'
 
 def decimal(value):
     try: number = Decimal(str(value).strip())

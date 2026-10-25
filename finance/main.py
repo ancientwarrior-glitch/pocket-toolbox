@@ -378,6 +378,9 @@ class UI:
         from business_board import board_data,render_board
         from charts import serve
         serve(render_board(board_data(self.f)))
+    def home_board(self):
+        from home_board import open_home
+        open_home(self.f)
     def help(self):
         print('''FIRST: import old records once, then create actual cash accounts with opening balances.
 Personal and Business are separate. Transfers are not income or expenses.
@@ -408,7 +411,7 @@ Read FINANCE.md in the repository for scope, backups, restore and migration deta
                  ('Savings, investment plans and profit shares',self.plans),('Crypto holdings and portfolio',self.investments),
                  ('Trading plans, journal and linear contracts',self.trading),('Search all finance records',self.search),
                  ('Correct/void a cash entry',self.corrections),('Import original records once',self.legacy),
-                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs),('Jabones Yayo / business board',self.business_board)]
+                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs),('Jabones Yayo / business board',self.business_board),('Main toolbox visual dashboard',self.home_board)]
         while True:
             try:
                 self.heading('FINANCE '+VERSION)
@@ -422,9 +425,11 @@ Read FINANCE.md in the repository for scope, backups, restore and migration deta
 
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--root');parser.add_argument('--purchase',action='store_true');parser.add_argument('--purchases',action='store_true');parser.add_argument('--correct',action='store_true')
+    parser.add_argument('--board',action='store_true')
     args=parser.parse_args(); ui=UI(args.root)
     try:
-        if args.purchase:ui.inventory()
+        if args.board:ui.home_board()
+        elif args.purchase:ui.inventory()
         elif args.purchases:ui.reports()
         elif args.correct:ui.corrections()
         else:ui.main()

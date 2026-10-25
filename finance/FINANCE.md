@@ -1,4 +1,4 @@
-# Pocket Finance — 0.2.0-beta.3 for the ORIGINAL toolbox
+# Pocket Finance — 0.2.0-beta.4 for the ORIGINAL toolbox
 
 This is an additional, offline financial record system for people running the original `menu` scripts. The stable public `pocket` starter is not replaced. Finance is a set of financial workflows and reports, not an Excel cell-grid/formula editor.
 
@@ -49,6 +49,17 @@ Use the new Finance system for subsequent financial records. Its database is sep
 17. Import normalized trading CSV.
 18. Graphs / visual dashboard.
 19. Jabones Yayo / business board.
+20. Main toolbox visual dashboard.
+
+## Main toolbox visual dashboard
+
+After updating, the original Dashboard button (normally main menu 11) opens the visual home board. Finance option 20 also opens it. The installer saves the previous `~/bin/toolbox-home.py` and adds a small launcher; calling that script with `help` still runs the original terminal guide. Reinstalling does not duplicate the launcher. If the original script is absent, Finance option 20 remains available.
+
+The home board reads the original formats shown by the user's dashboard: `Everyday/Jabones-Yayo/reading-log.json` (records with a `status` field), `Everyday/Organizer/shopping.json`, `uploads.json`, `batch-dates.json`, and batch-note filenames under `Everyday/Jabones-Yayo/Batches`. It displays current reads, unchecked shopping, batch ages, waiting uploads and saved publication/download-check counts. It only checks today's journal file exists; journal and batch-note bodies are not exposed.
+
+The latest `.tar.gz`, `.tgz` or `.zip` file in `~/storage/downloads/Termux-Backups` is chosen by modification time. This is a file-presence check, not verification that the archive is complete or restorable. Missing records show empty states; unreadable/wrong top-level JSON formats show a warning. No original records are edited or migrated.
+
+Finance/business links serve their read-only snapshots under the same random local route. Keep the Termux screen open while using links, then press Enter there to stop the server. Reopen the dashboard after changing records. Terminal menus still handle editing, opening books and tracking statuses. These boards use the original personal paths and names on this beta branch; they are not yet the generic public starter release.
 
 ## Business board
 

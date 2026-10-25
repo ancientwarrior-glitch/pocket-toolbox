@@ -43,13 +43,18 @@ def render(data):
     serialized=json.dumps(data,ensure_ascii=False).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
     return PAGE.replace('__DATA__',serialized)
 
-def serve(html,opener=None,pause=input):
+def serve(html,opener=None,pause=input,pages=None):
     token='/'+secrets.token_urlsafe(24)
-    payload=html.encode('utf-8')
+    routes={token:html.encode('utf-8')}
+    for name,page in (pages or {}).items():
+        if not name or any(c not in 'abcdefghijklmnopqrstuvwxyz-' for c in name):
+            raise ValueError('Invalid dashboard page name.')
+        routes[token+'/'+name]=page.encode('utf-8')
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
-            if self.path!=token:
+            if self.path not in routes:
                 self.send_error(404);return
+            payload=routes[self.path]
             self.send_response(200)
             self.send_header('Content-Type','text/html; charset=utf-8')
             self.send_header('Cache-Control','no-store')
