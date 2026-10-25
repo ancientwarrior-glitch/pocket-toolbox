@@ -9,6 +9,9 @@ from datetime import datetime
 
 def install(package, home, prefix):
     app = home / '.local/share/pocket-toolbox'
+    finance_files=['engine.py','main.py','charts.py','business_board.py','home_board.py','board_actions.py','finance_forms.py']
+    compile((package/'src/app.py').read_text(),'app.py','exec')
+    for name in finance_files:compile((package/'finance'/name).read_text(),name,'exec')
     command = prefix / 'bin/pocket'
     marker = '# Pocket Toolbox launcher'
     if command.exists() and marker not in command.read_text():
@@ -18,6 +21,13 @@ def install(package, home, prefix):
     if target.exists():
         shutil.copy2(target, app / ('app-before-update-' + datetime.now().strftime('%Y%m%d-%H%M%S-%f') + '.py'))
     shutil.copy2(package / 'src/app.py', target)
+    finance_target=app/'finance'
+    finance_target.mkdir(exist_ok=True)
+    for name in finance_files:
+        old=finance_target/name
+        if old.exists():shutil.copy2(old,finance_target/(name+'.before-'+datetime.now().strftime('%Y%m%d-%H%M%S-%f')))
+        shutil.copy2(package/'finance'/name,old)
+    shutil.copy2(package/'finance/FINANCE.md',finance_target/'FINANCE.md')
     config = app / 'config.json'
     if not config.exists():
         template = package / 'config.json'
@@ -28,7 +38,7 @@ def install(package, home, prefix):
                            ('currency','Currency label'),('books_folder','Books folder')]:
             settings[key] = input(f'{label} [{settings[key]}]: ').strip() or settings[key]
         config.write_text(json.dumps(settings, indent=2, ensure_ascii=False) + '\n')
-    for name in ('README.md', 'CUSTOMIZE-ME.md'):
+    for name in ('README.md', 'CUSTOMIZE-ME.md','CHANGELOG.md','SUPPORT.md','LICENSE'):
         shutil.copy2(package / name, app / name)
     command.parent.mkdir(parents=True, exist_ok=True)
     command.write_text('#!' + str(prefix / 'bin/bash') + '\n' + marker + '\nexec ' +

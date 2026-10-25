@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pocket Toolbox 0.1.0. Standard-library application; Android helpers are optional."""
+"""Pocket Toolbox 0.2.0. Standard-library application; Android helpers are optional."""
 from pathlib import Path, PurePosixPath
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
@@ -20,7 +20,7 @@ import tempfile
 import urllib.request
 from urllib.parse import urlsplit, quote
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 BOOKS = {'.pdf', '.epub', '.mobi', '.azw', '.azw3', '.txt'}
 MEDIA = {'.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mkv', '.mov', '.3gp'}
 KINDS = ('Income', 'Sale', 'Expense', 'Purchase', 'Debt payment', 'Debt collected')
@@ -341,7 +341,27 @@ class App:
             self.sql('UPDATE entries SET date=?,description=?,cents=? WHERE id=?', (newday, description, value, number))
 
     def budget(self):
-        self.menu('Budget and debts', [('Record money in/out', self.record), ('Monthly totals / CSV export', self.totals), ('Debts', self.debts), ('Correct/delete an entry', self.correct)])
+        self.finance()
+
+    def finance(self, action='main'):
+        import importlib.util
+        folder=self.root/'finance'
+        if not (folder/'main.py').exists():folder=Path(__file__).resolve().parents[1]/'finance'
+        sys.path.insert(0,str(folder))
+        try:
+            spec=importlib.util.spec_from_file_location('pocket_finance_ui',folder/'main.py')
+            module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+            ui=module.UI(self.data/'Finance',public_root=self.root,config=self.config)
+            try:getattr(ui,action)()
+            finally:ui.f.close()
+        finally:sys.path.pop(0)
+
+    def earlier_records(self):
+        print('Earlier 0.1 ledger: read-only. Use Finance option 12 to import a snapshot once.')
+        for row in self.sql('SELECT * FROM entries ORDER BY date,id'):print(row)
+        print('DEBTS')
+        for row in self.sql('SELECT * FROM debts ORDER BY id'):print(row)
+        self.pause()
 
     def project_note(self):
         folder = self.data / 'batches'
@@ -502,10 +522,18 @@ class App:
                 if query in text.casefold(): results.append(('Record', name, text, None))
         for row in self.sql('SELECT date,scope,kind,description,cents FROM entries'):
             text = ' | '.join(map(str, row[:4])) + ' | ' + self.money(row[4])
-            if query in text.casefold(): results.append(('Budget', row[3], text, None))
+            if query in text.casefold(): results.append(('Earlier 0.1 budget', row[3], text, None))
         for row in self.sql('SELECT * FROM debts'):
             text = f'{row[1]} | {row[2]} | {row[3]} | Outstanding: {self.money(self.debt_balance(row[0],row[4]))}'
-            if query in text.casefold(): results.append(('Debt', row[2], text, None))
+            if query in text.casefold(): results.append(('Earlier 0.1 debt', row[2], text, None))
+        finance_path=self.data/'Finance/finance.sqlite'
+        if finance_path.exists():
+            with closing(sqlite3.connect(finance_path.resolve().as_uri()+'?mode=ro',uri=True)) as db:
+                db.row_factory=sqlite3.Row
+                for table in ['cash','invoices','batches','items','investment_events','trade_plans','journal']:
+                    for row in db.execute('SELECT * FROM '+table+' ORDER BY id DESC'):
+                        text=json.dumps(dict(row),ensure_ascii=False)
+                        if query in text.casefold():results.append(('Finance',table+' #'+str(row['id']),text,None))
         record = self.choose(results, lambda r: f'[{r[0]}] {r[1]}')
         if record:
             print(record[2])
@@ -540,8 +568,12 @@ class App:
                 out.add(Path(temporary)/'budget.sqlite', arcname='data/budget.sqlite')
                 out.add(self.config_path, arcname='config.json')
                 for p in self.data.rglob('*'):
-                    if p.is_file() and not p.is_symlink() and p != self.dbpath and not p.name.startswith('budget.sqlite-'):
-                        out.add(p, arcname='data/' + str(p.relative_to(self.data)), recursive=False)
+                    if p.is_file() and not p.is_symlink() and p != self.dbpath and not any(p.name.endswith(s) for s in ('.sqlite-wal','.sqlite-shm','.sqlite-journal')):
+                        if p.suffix=='.sqlite':
+                            snapshot=Path(temporary)/('snapshot-'+hashlib.sha256(str(p).encode()).hexdigest()+'.sqlite')
+                            with closing(sqlite3.connect(p.resolve().as_uri()+'?mode=ro',uri=True)) as source,closing(sqlite3.connect(snapshot)) as target:source.backup(target)
+                            out.add(snapshot,arcname='data/'+str(p.relative_to(self.data)))
+                        else:out.add(p, arcname='data/' + str(p.relative_to(self.data)), recursive=False)
             print('Backup saved:', path)
             return path
         except BaseException:
@@ -574,8 +606,14 @@ class App:
                     with closing(sqlite3.connect(temp.as_uri()+'?mode=ro',uri=True)) as db:
                         if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok': raise ValueError('Invalid budget database.')
                         for table in ['entries','debts']: db.execute('SELECT * FROM '+table+' LIMIT 0')
+                if str(name)=='data/Finance/finance.sqlite':
+                    with closing(sqlite3.connect(temp.as_uri()+'?mode=ro',uri=True)) as db:
+                        if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Invalid Finance database.')
+                        for table in ['accounts','cash','invoices','items','batches','imports','audit']:db.execute('SELECT * FROM '+table+' LIMIT 0')
                 staged.append((temp,dest))
             if not {'config.json','data/budget.sqlite'}.issubset(seen): raise ValueError('Incomplete backup.')
+            if (self.data/'Finance/finance.sqlite').exists() and 'data/Finance/finance.sqlite' not in seen:
+                raise ValueError('This older backup has no Finance database. Restore it in a separate install to avoid mixing it with current Finance records.')
             print(f'{len(staged)} files. Matching records/settings will be replaced; additional files remain.')
             if input('Type RESTORE to continue: ') != 'RESTORE': return
             self.backup()
@@ -641,6 +679,9 @@ class App:
         self.open(url)
 
     def dashboard(self):
+        self.finance('home_board')
+
+    def terminal_dashboard(self):
         self.heading(self.config['title'] + ' — ' + str(date.today()))
         log = self.read('reading-log.json',{})
         print('CURRENT READS')
@@ -676,13 +717,16 @@ class App:
                 self.pause()
 
     def help(self):
+        print("0.2: Dashboard opens the visual board; Budget opens full Finance. Create accounts/categories first.")
+        print("Finance: 18 graphs, 19 business board, 20 main board. Finance 12 imports the earlier 0.1 ledger once.")
+        print("Stock purchases/sales and payments are linked. Enter each once. Records stay in this toolbox’s app folder.")
         print('''Type pocket to start. 0 returns from menus. CTRL+C cancels an action.
 Books: number opens; a NUMBER favorites; n NUMBER notes; r NUMBER reading status.
 Notes: single . saves an entry. Nano: CTRL+O, Enter saves; CTRL+X exits.
 RSS: Enter opens feed/article; o opens externally; R refreshes; q goes back.
 Shopping: a adds; number checks; d NUMBER deletes.
-Project purchases and budget entries share ONE ledger. Enter each payment once.
-Budget totals are cash flow, not profit or your available cash balance.
+Project stock purchases and Finance share ONE ledger. Enter each payment once.
+Cash flow differs from profit. Finance also tracks opening balances and business costs.
 Backups include settings and private records; books/media are excluded.
 Restore makes a fresh backup first. It replaces matching files and keeps extras.
 Shared files need termux-setup-storage and Android access permission.
@@ -711,7 +755,7 @@ This release is a starter kit. Android app handoffs require a phone test.''')
 
     def main(self):
         project = lambda: self.menu(self.config['project_name'], [
-            ('Batch/project notes',self.project_note),('Record a purchase',lambda:self.record('Purchase')),
+            ('Batch/project notes',self.project_note),('Stock, batches, purchases and sales',lambda:self.finance('inventory')),
             ('Batch timeline',self.timeline),('Copy/open media',self.media),('Upload tracker',self.uploads)])
         self.menu(self.config['title'], [
             ('Dashboard',self.dashboard),('Books, favorites, reading log and notes',self.library),
@@ -723,7 +767,10 @@ This release is a starter kit. Android app handoffs require a phone test.''')
             ('Search everything',self.search),('Search PDF text',self.pdf_search),
             ('Find duplicate files',self.duplicates),('Export reading notes',self.export_notes),
             ('Back up records',lambda:(self.backup(),self.pause())),('Restore records',self.restore),
-            ('Settings',self.settings),('Help',self.help)])
+            ('Settings',self.settings),('Help',self.help),
+            ('Finance graphs',lambda:self.finance('graphs')),
+            ('Business board',lambda:self.finance('business_board')),
+            ('Earlier 0.1 ledger (read-only)',self.earlier_records)])
 
 if __name__ == '__main__':
     if '--version' in sys.argv:

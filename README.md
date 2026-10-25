@@ -1,12 +1,14 @@
-# Pocket Toolbox — starter kit 0.1.0
+# Pocket Toolbox — 0.2.0 — Finance & visual boards
 
-A numbered personal workstation for Termux on Android. Built from the toolbox developed with Yayo; distributed as an empty, configurable starter kit.
+A numbered personal workstation for Termux on Android. Distributed as an empty, configurable starter kit.
 
 ## What is included
 
 - Books with numbered browsing, category counts, favorites, reading status and per-book notes.
 - Quick notes and dated journal; editing with backups through nano.
-- Shopping checklist; personal/business cash-flow ledger, debt balances and payments, corrections, monthly CSV export.
+- Shopping checklist; full Personal/Business Finance with opening balances, cash, transfers, reconciliation, budgets, invoices, partial payments, inventory, production costs, sales and returns.
+- Savings goals, approved profit-share records, manual crypto portfolios, dated prices/FX, trading plans/journal, linear-contract records and CSV imports.
+- Three local browser boards: main dashboard, Finance graphs and your business board. Forms save shopping/status changes, notes, cash, budgets, goals, asset prices, stock, batches, sales and payments.
 - Generic project hub: batch notes, production dates and ages, purchases, copying photos/videos, upload status and links.
 - RSS through an isolated Newsboat configuration; optional PeerTube low-resolution handoff.
 - Recent downloads, folder shortcuts, filename/record search, PDF text search, duplicate reports, reading-note exports.
@@ -68,9 +70,23 @@ Notes: put a single `.` on its own line to save an appended entry. In nano, `CTR
 
 Shopping: `a` adds; item number toggles checked state; `d 3` removes item 3. Folder browsing: `a` saves the current folder as a shortcut. Media copying asks for a full source file path and a label. Original media is kept. Upload status is entered manually; the kit neither uploads nor deletes videos.
 
-## Budget behavior
+## Finance and the boards
 
-The project purchase button and budget menu write to **one ledger**, so a purchase is counted once. Keep Personal and Business scopes separate. Debt creation records an already outstanding amount without implying cash changed hands; debt payments/collections create one cash movement and reduce the debt. These are cash-flow records, not accounting profit, inventory valuation or an available bank/cash balance. There is no starting-balance calculation or Excel synchronization. Export creates a separate CSV. Corrections make a full record backup before modifying/deleting an entry; debt payment corrections cannot exceed the outstanding principal. To change an incorrectly created debt's person/principal/direction, request a customization; that editor is not included in 0.1.0.
+Dashboard opens the main board in your Android browser. Keep Termux running while using it; return to Termux and press Enter when finished. The Finance and business buttons open the other boards. There are no external scripts, uploads or live prices. The browser connects only to a temporary random localhost URL.
+
+**First use:** open Budget and debts → Finance → 1 to create Personal/Business accounts with actual opening dates and balances, then categories. Records start blank. Finance options 18/19/20 open the Finance, business and main boards. Your configured title, project name, currency and folders carry through to the public boards. Browser forms include Review → Save for financial/business records; the main checklist saves when checked.
+
+Material purchases and product sales belong in Finance's stock/invoice forms. Paid now creates their linked payment automatically. Do not enter that payment again as a cash expense/income. Production consumes materials and adds finished stock at saved material/labor/overhead costs. Batch ages are planning information, not proof that soap is ready to use. Cash flow, portfolio value and tracked business result are different figures. Profit shares require an explicitly reconciled/approved profit amount.
+
+Crypto prices/FX are dated manual inputs; missing values remain unknown. The manager records spot holdings, swaps, basis-preserving transfers, fees, plans/journal and manual linear contracts. It does not connect to exchanges, place trades, calculate taxes or implement liquidation/inverse contracts. Exit statistics include partial exits; they are not full-trade or time-weighted returns. This is recordkeeping and planning, not a complete Excel formula-grid replacement. See [Finance details and limitations](finance/FINANCE.md).
+
+### Upgrading from public 0.1
+
+Update your checkout and rerun install.sh. Existing config, notes, books references and records are retained. The old budget database stays intact, and Earlier 0.1 ledger provides a read-only view. New money entries use `data/Finance/finance.sqlite`.
+
+If you had old money records, use Finance option 12 to import a snapshot once. The importer is atomic, detects repeated/changed rows and preserves the old database. It imports historical movements to clearly labeled accounts with unknown opening balances, plus outstanding debts. Do not treat those historical movement totals as available cash: create actual current accounts separately. Old purchases lack stock quantities/cost allocations, so inventory needs reviewed opening stock; it is not invented automatically. Fresh users with no old records skip import. Do not keep editing the old database after import.
+
+The public installation is isolated under its own app folder. Other terminal menus and their records are not modified.
 
 ## RSS and videos
 
@@ -84,15 +100,26 @@ Grant shared-storage access with `termux-setup-storage`. If a book opens through
 
 ## Backup, restore and privacy
 
-Records/settings live under `~/.local/share/pocket-toolbox`. Backups go to `Downloads/Pocket-Toolbox-Backups`. They contain your private records, favorites, RSS state and settings; they are **not** public starter kits. Books, copied media, other phone files and the program itself are excluded. Keep the source ZIP or repository checkout for reinstalling the program; then restore a compatible record backup. Copy important backups/media off the phone separately.
+Records/settings live under `~/.local/share/pocket-toolbox`. Backups go to your configured Downloads folder under `Pocket-Toolbox-Backups`. Finance and checklist backup files are included; SQLite databases are copied through the SQLite backup API. They contain your private records, favorites, RSS state and settings; they are **not** public starter kits. Books, copied media, other phone files and the program itself are excluded. Keep the source ZIP or repository checkout for reinstalling the program; then restore a compatible record backup. Copy important backups/media off the phone separately.
 
-Restore accepts this kit's `pocket-*.tar.gz` format only, validates members and the database, stages files, asks you to type `RESTORE`, and backs up the current state first. Matching records/settings are replaced; extra files remain. It rejects links and unsafe archive paths. A storage failure can still interrupt a multi-file restore; the pre-restore snapshot is retained. Backups from the original personalized `menu` are not compatible with this clean starter kit.
+Restore accepts this kit's `pocket-*.tar.gz` format only, validates members and the database, stages files, asks you to type `RESTORE`, and backs up the current state first. Matching records/settings are replaced; extra files remain. It rejects links and unsafe archive paths. A storage failure can still interrupt a multi-file restore; the pre-restore snapshot is retained. Backups from the original personalized `menu` are not compatible with public `pocket`. Once a Finance database exists, a pre-0.2 archive without Finance is refused to avoid mixing old and new money records; restore such an archive in a separate install instead.
 
 The program has no telemetry or automatic publishing. Network activity occurs when using RSS, video lookup or external links. The duplicate finder hashes candidates and writes a report without deleting anything. File search uses names and record text; PDF search can read existing PDF text and normalizes whitespace, but does not perform OCR on scanned images. Large scans can take time/memory.
 
 ## Testing and release status
 
-Run `python -m unittest discover -s tests -v` from the source folder for automated checks. These run on desktop Python and cover money validation, ledger consistency, debt limits, note identity, safe backups/restores, configuration validation and installer behavior. They do not substitute for Android testing. Before advertising it as a stable release, test install, reader/player handoff, Newsboat, storage permissions, and restore on a spare Termux setup. Version 0.1.0 is a shareable **starter/beta**.
+Run both suites from the source folder:
+
+```bash
+python -m unittest discover -s tests -v
+python -m unittest discover -s finance -v
+```
+
+Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.0 is a beta**, with blank records and no private configuration bundled.
+
+## Support
+
+Free and open source. Contribution and donation-status information: [SUPPORT.md](SUPPORT.md).
 
 ## Share it
 
