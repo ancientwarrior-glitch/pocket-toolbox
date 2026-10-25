@@ -98,16 +98,14 @@ def render_home(data, editor=None):
 
 
 def open_home(finance, home=None, opener=None, pause=input):
-    from charts import dashboard_data, render, serve
-    from business_board import board_data, render_board
+    from charts import serve
     from board_actions import BoardActions
-    from contextlib import closing
-    from engine import Finance
+    from finance_forms import render_view
     actions=BoardActions(home or Path.home(),finance.path)
     def money_page():
-        with closing(Finance(finance.path)) as current:return render(dashboard_data(current))
+        return render_view(finance.path,'finance')
     def business_page():
-        with closing(Finance(finance.path)) as current:return render_board(board_data(current))
+        return render_view(finance.path,'business')
     serve(lambda:render_home(home_data(home),actions.state()), opener=opener, pause=pause,
           pages={'finance': money_page, 'business': business_page},api=actions)
 

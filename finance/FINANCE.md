@@ -1,4 +1,4 @@
-# Pocket Finance — 0.2.0-beta.5 for the ORIGINAL toolbox
+# Pocket Finance — 0.2.0-beta.6 for the ORIGINAL toolbox
 
 This is an additional, offline financial record system for people running the original `menu` scripts. The stable public `pocket` starter is not replaced. Finance is a set of financial workflows and reports, not an Excel cell-grid/formula editor.
 
@@ -53,6 +53,16 @@ Use the new Finance system for subsequent financial records. Its database is sep
 
 ## Main toolbox visual dashboard
 
+### Finance and business board forms
+
+Finance option 18 now includes simple cash entries, setting/replacing expense budgets, creating goals, adding/subtracting reserved or committed earmarks, manual dated asset-price/FX updates, and linked bill payments/refunds. Price updates replace that asset/date's saved valuation and affect all positions in that asset; they never place trades. Existing portfolio/contract/trade-record menus remain available in the terminal.
+
+The business board (option 19) includes material/product definitions, first-event opening stock, material receipts, production with multiple material inputs and allocated labor/overhead, product sales, and linked payments/refunds. Quantities use each item's base unit; compatible kg/l suffixes are converted by the existing engine. Forms show recorded stock quantities as a guide; the engine rechecks availability at save time. Opening stock records no payment. A purchase or sale with Paid now creates the invoice, stock movement and payment together, rolling them all back on validation failure.
+
+Forms use **Review entry → Save entry**. Saved Finance changes have durable request receipts in the same transaction, including batch production and payments. Network retries do not duplicate them. Corrections, returns, transfers, complex trade actions and other operations not shown in these forms remain in the terminal menus. New cash entries use the normal correction path; stock and invoice events require their originating correction/return operations.
+
+Both standalone boards and boards opened from the main dashboard have these controls. They use the same local API protection and reload fresh reports after saving. There is no live price connection, exchange trading or automatic business calculation outside the existing engine.
+
 ### Editing from the main board
 
 The bottom of Dashboard now has controls to add/check/uncheck shopping items, change an existing video's status to To upload / Published / Download checked, save a new quick note, and record simple Income/Expense entries using existing Finance accounts and optional matching categories. Upload changes affect the tracker only, not media files or the remote site. New quick notes save under `~/Everyday/Notes/board-<request-id>.txt`; the original quick-note writer remains unchanged.
@@ -61,7 +71,7 @@ Do not enter stock purchases, sales invoices, debt payments or transfers through
 
 List writes retain all existing row fields and save exact previous JSON bytes under `Everyday/Organizer/Board-Backups`, then replace files atomically. Unsupported/corrupt formats are not overwritten. Avoid editing the same list simultaneously from a terminal editor: revision checks catch changes before save, but external writers do not share the board's lock. Lists, notes and Finance keep their original separate storage formats; there is no cross-file transaction.
 
-The server accepts only allowlisted JSON actions under its random local URL, validates the localhost Host and same-origin Origin headers, caps request size and offers no arbitrary file or command API. Each HTTP handler opens its own SQLite connection. Finance/business graphs reached from the main board load fresh saved records on navigation/reload. Keep the Termux session running while saving; an already loaded page cannot save after the server stops. The Finance graphs and business board themselves remain report views; edit controls are on the main board.
+The server accepts only allowlisted JSON actions under its random local URL, validates the localhost Host and same-origin Origin headers, caps request size and offers no arbitrary file or command API. Each HTTP handler opens its own SQLite connection. Finance/business graphs load fresh saved records on navigation/reload. Keep the Termux session running while saving; an already loaded page cannot save after the server stops.
 
 After updating, the original Dashboard button (normally main menu 11) opens the visual home board. Finance option 20 also opens it. The installer saves the previous `~/bin/toolbox-home.py` and adds a small launcher; calling that script with `help` still runs the original terminal guide. Reinstalling does not duplicate the launcher. If the original script is absent, Finance option 20 remains available.
 

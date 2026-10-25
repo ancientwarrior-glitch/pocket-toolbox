@@ -372,12 +372,11 @@ class UI:
         path=Path(self.required('Full CSV file path: ')).expanduser()
         if self.confirm():print(self.f.import_trades(path));self.pause()
     def graphs(self):
-        from charts import dashboard_data,render,serve
-        serve(render(dashboard_data(self.f)))
+        from finance_forms import open_view
+        open_view(self.f,'finance')
     def business_board(self):
-        from business_board import board_data,render_board
-        from charts import serve
-        serve(render_board(board_data(self.f)))
+        from finance_forms import open_view
+        open_view(self.f,'business')
     def home_board(self):
         from home_board import open_home
         open_home(self.f)

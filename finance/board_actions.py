@@ -8,7 +8,7 @@ import re
 import tempfile
 import threading
 
-from engine import Finance
+from engine import Finance, quantity_in
 
 
 def render_editor(state):
@@ -156,6 +156,65 @@ class BoardActions:
                 finance.cash_entry(account, value, kind, description, at, category)
                 finance.db.execute('INSERT INTO imports VALUES(?,?,?)', ('board-cash', request_id, signature))
 
+    def finance_action(self, request, request_id, signature):
+        def text(name, limit=500):return self.text(request,name,limit)
+        def ident(name, optional=False):
+            value=request.get(name)
+            if optional and value is None:return None
+            if type(value) is not int or value<=0:raise ValueError('Choose '+name+'.')
+            return value
+        with closing(Finance(self.finance_path)) as finance:
+            with finance.transaction('board finance request', {'request':request_id,'action':request['action']}):
+                old=finance.db.execute('SELECT digest FROM imports WHERE source=? AND key=?',('board-finance',request_id)).fetchone()
+                if old:
+                    if old[0]!=signature:raise ValueError('Request ID already used for a different entry.')
+                    return
+                action=request['action']
+                if action=='budget-set':
+                    category=ident('category')
+                    if finance.one('categories',category)['kind']!='Expense':raise ValueError('Choose an expense category.')
+                    finance.set_budget(text('month',7),category,text('amount',40))
+                elif action=='goal-add':
+                    finance.plan(text('scope',20),text('name'),text('target',40),text('due',10),text('monthly',40))
+                elif action=='goal-allocate':
+                    if type(request.get('committed')) is not bool:raise ValueError('Choose reserved or committed.')
+                    finance.allocate(ident('goal'),text('amount',40),request['committed'])
+                elif action=='item-add':
+                    finance.item(text('name'),text('kind',20),text('unit',10))
+                elif action=='price-set':
+                    finance.price(text('asset',30),text('price',60),at=text('day',10),quote=text('quote',30),fx=text('fx',60))
+                elif action in ('stock-opening','stock-receive','product-sale'):
+                    item=ident('item');record=finance.one('items',item)
+                    quantity=str(quantity_in(text('quantity',60),record['unit']))
+                    if action=='stock-opening':
+                        finance.opening_stock(item,quantity,text('total',40),at=text('day',10),note=text('description'))
+                    else:
+                        if record['kind']!=('Product' if action=='product-sale' else 'Material'):
+                            raise ValueError('Choose a finished product for a sale or a material for a receipt.')
+                        account=ident('account',True)
+                        if account and finance.one('accounts',account)['scope']!='Business':raise ValueError('Choose a Business account.')
+                        function=finance.sell if action=='product-sale' else finance.receive_stock
+                        function(item,quantity,text('total',40),party=text('party'),at=text('day',10),account=account,paid=text('paid',40))
+                elif action=='batch-produce':
+                    product=ident('product');record=finance.one('items',product)
+                    ingredients=request.get('ingredients')
+                    if not isinstance(ingredients,list) or not 1<=len(ingredients)<=100:raise ValueError('Add 1–100 materials.')
+                    parsed=[]
+                    for row in ingredients:
+                        if not isinstance(row,dict) or type(row.get('item')) is not int:raise ValueError('Choose a material.')
+                        material=finance.one('items',row['item'])
+                        value=self.text(row,'quantity',60)
+                        parsed.append((row['item'],str(quantity_in(value,material['unit']))))
+                    finance.produce(text('name'),product,str(quantity_in(text('quantity',60),record['unit'])),parsed,
+                                    labor=text('labor',40),overhead=text('overhead',40),at=text('day',10))
+                elif action=='invoice-payment':
+                    invoice=ident('invoice');account=ident('account');mode=text('mode',20)
+                    if mode not in ('Payment','Refund'):raise ValueError('Choose Payment or Refund.')
+                    function=finance.pay if mode=='Payment' else finance.refund
+                    function(invoice,account,text('amount',40),at=text('day',10))
+                else:raise ValueError('Unknown finance action.')
+                finance.db.execute('INSERT INTO imports VALUES(?,?,?)',('board-finance',request_id,signature))
+
     def __call__(self, request):
         with self.lock:
             request_id = request.get('request_id', '')
@@ -171,6 +230,8 @@ class BoardActions:
                 self.save_list('uploads' if action == 'upload-status' else 'shopping', request)
             elif action == 'cash-add':
                 self.cash(request, request_id, signature)
+            elif action in ('budget-set','goal-add','goal-allocate','item-add','price-set','stock-opening','stock-receive','product-sale','batch-produce','invoice-payment'):
+                self.finance_action(request,request_id,signature)
             elif action == 'note-add':
                 text = self.text(request, 'text', 8000)
                 folder = self.home / 'Everyday/Notes'
