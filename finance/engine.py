@@ -7,8 +7,9 @@ import csv
 import hashlib
 import json
 import sqlite3
+from pocket_security import private_dir,private_file,private_umask
 
-VERSION = '0.2.0-beta.6'
+VERSION = '0.2.1-beta'
 
 def decimal(value):
     try: number = Decimal(str(value).strip())
@@ -56,8 +57,9 @@ def quantity_in(value, unit):
 
 class Finance:
     def __init__(self, path, base='MXN'):
+        private_umask()
         self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        private_dir(self.path.parent);private_file(self.path)
         self.db = sqlite3.connect(self.path)
         self.db.row_factory = sqlite3.Row
         self.db.execute('PRAGMA foreign_keys=ON')

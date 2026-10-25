@@ -7,3 +7,7 @@ config.json
 data/
 *.tar.gz
 *.zip
+*.age
+*.partial
+Exports/
+Backups/

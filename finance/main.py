@@ -111,7 +111,7 @@ class UI:
             print('Tracked result:',self.money(result['tracked_result']))
             print(result['note']); print('Unclassified legacy cash entries:',result['legacy_unclassified'])
         if input('\ne: export this cash report | Enter: back: ').lower()=='e':
-            print('Saved:',self.f.export_cash_report(scope,start,end,self.downloads/'Finance-Reports'));self.pause()
+            print('Saved:',self.f.export_cash_report(scope,start,end,self.root/'Exports'));self.pause()
     def budgets(self):
         scope=self.scope()
         if not scope:return
@@ -368,7 +368,7 @@ class UI:
         path=self.choose(sorted((self.root/'Backups').glob('finance-*.sqlite'),reverse=True),lambda p:p.name)
         if path and input('Type RESTORE to replace current finance records: ')=='RESTORE':
             print('Pre-restore snapshot:',self.f.restore(path,self.root/'Backups'));self.pause()
-    def export(self):print('Saved:',self.f.export(self.downloads));self.pause()
+    def export(self):print('Saved:',self.f.export(self.root/'Exports'));self.pause()
     def import_trades(self):
         print('Use the normalized template in finance/trades-template.csv. Exchange-specific exports must be mapped to it first.')
         print('Amounts are in the base currency; fees are base-currency values. Rows require stable source + ID and chronological dates.')
@@ -391,7 +391,7 @@ class UI:
             print('Tracked profit needs reconciliation before distribution. Goal earmarks do not move cash.')
             print('Portfolio prices/FX are manual and dated. Missing values are unknown; no exchange execution or tax engine.')
             print('Toolbox backups include Finance. Finance snapshots: '+str(self.root/'Backups'))
-            print('CSV exports: '+str(self.downloads)+'. Raw monetary fields are cents.')
+            print('Private CSV exports: '+str(self.root/'Exports')+'. Raw monetary fields are cents.')
             print('Read README.md and finance/FINANCE.md for accounting conventions and limits.')
             self.pause();return
         print('''FIRST: import old records once, then create actual cash accounts with opening balances.
@@ -413,7 +413,7 @@ Contracts are separate manual LINEAR records, not automatic exchange execution o
 No tax calculations, exchange API connection, live prices, stop orders or automatic trading are included.
 Corrections preserve audit records. Attachments are file references, not copied images.
 Main toolbox backups include ~/Workspace/Finance and the installed finance code.
-Finance backups here are SQLite snapshots; exports have one CSV per table, monetary fields in CENTS.
+Finance snapshots and CSV exports stay in private Finance/Backups and Finance/Exports. Raw monetary fields use CENTS.
 Read FINANCE.md in the repository for scope, backups, restore and migration details.''')
         self.pause()
     def main(self):

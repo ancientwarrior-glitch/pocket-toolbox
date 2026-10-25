@@ -15,11 +15,13 @@ from engine import Finance
 from home_board import home_data,render_home,open_home
 from board_actions import BoardActions
 from finance_forms import render_view
-from test_toolbox import app,installer,SOURCE
+from test_toolbox import app,installer,SOURCE,encrypt_fixture,archive_fixture
 
 
 class PublicFinanceTests(unittest.TestCase):
     def setUp(self):
+        self.crypto_patch=patch.object(app,'encrypt_archive',side_effect=encrypt_fixture);self.crypto_patch.start()
+        self.decrypt_patch=patch.object(app,'decrypted_archive',side_effect=archive_fixture);self.decrypt_patch.start()
         self.temp=tempfile.TemporaryDirectory();self.home=Path(self.temp.name)
         self.root=self.home/'public';self.root.mkdir()
         self.config=dict(app.DEFAULTS,title='My Desk',project_name='My Candles',currency='USD',downloads_folder=str(self.home/'Downloads'))
@@ -27,7 +29,8 @@ class PublicFinanceTests(unittest.TestCase):
         self.path=self.app.data/'Finance/finance.sqlite'
         self.f=Finance(self.path,'USD')
 
-    def tearDown(self):self.f.close();self.temp.cleanup()
+    def tearDown(self):
+        self.crypto_patch.stop();self.decrypt_patch.stop();self.f.close();self.temp.cleanup()
 
     def test_custom_paths_names_and_public_reading_format(self):
         self.app.write('reading-log.json',{'History/Book.epub':'Reading','Other.pdf':'Finished'})

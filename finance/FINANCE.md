@@ -1,4 +1,4 @@
-# Pocket Finance 0.2.0 beta
+# Pocket Finance 0.2.1 beta
 
 Included in public Pocket Toolbox. Install/update using the root README and install.sh. The separate original-menu compatibility installer is not part of this public package.
 
@@ -35,3 +35,7 @@ Trading plans/journal and manual LINEAR contracts are included. No exchange conn
 Full toolbox backups include Finance via SQLite snapshots. Finance 13/16 backs up/restores Finance alone, validating the snapshot and making a pre-restore backup. Raw CSV tables use cents; readable cash reports format currency. Books, media and referenced screenshots need separate backups. A pre-0.2 full backup without Finance cannot replace a setup that already has Finance, to avoid mixing money records.
 
 This is a multi-year recordkeeping and planning application, not an Excel formula grid. Automatic equipment/cost reconciliation, live read-only exchange adapters, native exchange CSV formats, full-trade grouping and deposit-adjusted market-equity performance remain future work.
+
+## Security update
+
+Full toolbox backups now use age encryption; install/update through install.sh to get age. Finance-only snapshots and CSV exports stay in private Finance/Backups and Finance/Exports. Live records are not an encrypted vault. Boards enforce expiry and browser restrictions; see SECURITY.md. Older plaintext files are not removed automatically.

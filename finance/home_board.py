@@ -57,7 +57,7 @@ def home_data(home=None, today=None, public_root=None, config=None):
     backups = []
     folder = Path(config.get('downloads_folder','~/storage/downloads')).expanduser()/'Pocket-Toolbox-Backups' if public else home / 'storage/downloads/Termux-Backups'
     for path in folder.glob('*'):
-        if path.is_file() and (path.name.endswith('.tar.gz') or path.suffix in ('.tgz', '.zip')):
+        if path.is_file() and (path.name.endswith(('.tar.gz','.tar.gz.age')) or path.suffix in ('.tgz', '.zip')):
             try:
                 info = path.stat()
                 backups.append(dict(name=path.name, modified=info.st_mtime, size=info.st_size))
@@ -65,6 +65,7 @@ def home_data(home=None, today=None, public_root=None, config=None):
                 issues.append('Could not inspect a backup file.')
     latest = max(backups, key=lambda r: r['modified']) if backups else None
     if latest:
+        latest['encrypted'] = latest['name'].endswith('.age')
         latest['date'] = datetime.fromtimestamp(latest['modified']).strftime('%Y-%m-%d %H:%M')
     return dict(today=str(today), reading=reading, shopping=pending, batches=batches,
                 waiting=waiting, published=sum(r.get('status') == 'Published' for r in uploads),
@@ -81,7 +82,7 @@ def render_home(data, editor=None, title="Pocket Toolbox", project='My Project')
         return '<ul>' + ''.join('<li>' + escape(item) + '</li>' for item in items) + '</ul>'
     batch_items = [b['name'] + ' · ' + b['state'] for b in data['batches']]
     backup = data['backup']
-    backup_html = ('<strong>' + escape(backup['name']) + '</strong><p>' + escape(backup['date']) +
+    backup_html = ('<strong>' + escape(backup['name']) + '</strong><p>' + escape(backup['date']) + (' · Encrypted' if backup.get('encrypted') else ' · Unencrypted archive') +
                    ' · ' + f"{backup['size']/1024/1024:.1f} MB" + '</p><small>File found in Termux-Backups. Contents and restore have not been verified.</small>') if backup else '<p class="empty">No backup archive found in Downloads/Termux-Backups.</p>'
     sections = (
         '<section><h2>Currently reading</h2>' + listing(data['reading'], 'No books marked Reading yet.') + '<small>Open Books in your terminal menu to read or change status.</small></section>' +

@@ -20,7 +20,13 @@ import tempfile
 import urllib.request
 from urllib.parse import urlsplit, quote
 
-VERSION = '0.2.0'
+_security_folder=Path(__file__).resolve().parent/'finance'
+if not _security_folder.is_dir():_security_folder=Path(__file__).resolve().parents[1]/'finance'
+sys.path.insert(0,str(_security_folder))
+from pocket_security import private_dir,private_file,harden_tree,encrypt_archive,decrypted_archive,MAX_ARCHIVE_BYTES,MAX_MEMBER_BYTES,MAX_ARCHIVE_MEMBERS
+sys.path.pop(0)
+
+VERSION = '0.2.1-beta'
 BOOKS = {'.pdf', '.epub', '.mobi', '.azw', '.azw3', '.txt'}
 MEDIA = {'.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mkv', '.mov', '.3gp'}
 KINDS = ('Income', 'Sale', 'Expense', 'Purchase', 'Debt payment', 'Debt collected')
@@ -68,14 +74,14 @@ def atomic(path, text):
 
 class App:
     def __init__(self, root=None):
-        self.root = Path(root or Path.home() / '.local/share/pocket-toolbox').resolve()
-        self.root.mkdir(parents=True, exist_ok=True)
+        self.root = private_dir(Path(root or Path.home() / '.local/share/pocket-toolbox').expanduser().absolute())
         self.config_path = self.root / 'config.json'
+        private_file(self.config_path)
         if not self.config_path.exists():
             atomic(self.config_path, json.dumps(DEFAULTS, indent=2))
         self.config = validate_settings(json.loads(self.config_path.read_text()))
         self.data = self.root / 'data'
-        self.data.mkdir(exist_ok=True)
+        harden_tree(self.data)
         self.dbpath = self.data / 'budget.sqlite'
         with closing(sqlite3.connect(self.dbpath)) as db:
             db.executescript('''CREATE TABLE IF NOT EXISTS entries (
@@ -560,33 +566,45 @@ class App:
         folder = self.path('downloads_folder') / 'Pocket-Toolbox-Backups'
         if folder.is_relative_to(self.root): raise ValueError('Backup folder must be outside the app folder.')
         folder.mkdir(parents=True, exist_ok=True)
-        path = folder / ('pocket-' + stamp() + '.tar.gz')
-        try:
-            with tempfile.TemporaryDirectory() as temporary, tarfile.open(path, 'w:gz') as out:
-                with closing(sqlite3.connect(self.dbpath)) as source, closing(sqlite3.connect(str(Path(temporary)/'budget.sqlite'))) as target:
-                    source.backup(target)
-                out.add(Path(temporary)/'budget.sqlite', arcname='data/budget.sqlite')
-                out.add(self.config_path, arcname='config.json')
-                for p in self.data.rglob('*'):
-                    if p.is_file() and not p.is_symlink() and p != self.dbpath and not any(p.name.endswith(s) for s in ('.sqlite-wal','.sqlite-shm','.sqlite-journal')):
-                        if p.suffix=='.sqlite':
-                            snapshot=Path(temporary)/('snapshot-'+hashlib.sha256(str(p).encode()).hexdigest()+'.sqlite')
-                            with closing(sqlite3.connect(p.resolve().as_uri()+'?mode=ro',uri=True)) as source,closing(sqlite3.connect(snapshot)) as target:source.backup(target)
-                            out.add(snapshot,arcname='data/'+str(p.relative_to(self.data)))
-                        else:out.add(p, arcname='data/' + str(p.relative_to(self.data)), recursive=False)
-            print('Backup saved:', path)
-            return path
-        except BaseException:
-            path.unlink(missing_ok=True)
-            raise
+        path = folder / ('pocket-' + stamp() + '.tar.gz.age')
+        with tempfile.TemporaryDirectory(prefix='.backup-',dir=self.root) as temporary:
+            plain=Path(temporary)/'archive.tar.gz'
+            self._write_archive(plain,temporary)
+            encrypt_archive(plain,path)
+        print('Encrypted backup saved:', path)
+        return path
+
+    def _write_archive(self,path,temporary):
+        count=0;expanded=0
+        def check_member(info):
+            nonlocal count,expanded
+            count+=1;expanded+=info.size
+            if count>MAX_ARCHIVE_MEMBERS or info.size>MAX_MEMBER_BYTES or expanded>MAX_ARCHIVE_BYTES:raise ValueError('Records exceed safe backup/restore limits.')
+            info.mode=0o600
+            return info
+        with tarfile.open(path, 'w:gz') as out:
+            with closing(sqlite3.connect(self.dbpath)) as source, closing(sqlite3.connect(str(Path(temporary)/'budget.sqlite'))) as target:
+                source.backup(target)
+            out.add(Path(temporary)/'budget.sqlite', arcname='data/budget.sqlite',filter=check_member)
+            out.add(self.config_path, arcname='config.json',filter=check_member)
+            for p in self.data.rglob('*'):
+                if p.is_file() and not p.is_symlink() and p != self.dbpath and not any(p.name.endswith(s) for s in ('.sqlite-wal','.sqlite-shm','.sqlite-journal')):
+                    if p.suffix=='.sqlite':
+                        snapshot=Path(temporary)/('snapshot-'+hashlib.sha256(str(p).encode()).hexdigest()+'.sqlite')
+                        with closing(sqlite3.connect(p.resolve().as_uri()+'?mode=ro',uri=True)) as source,closing(sqlite3.connect(snapshot)) as target:source.backup(target)
+                        out.add(snapshot,arcname='data/'+str(p.relative_to(self.data)),filter=check_member)
+                    else:out.add(p, arcname='data/' + str(p.relative_to(self.data)), recursive=False,filter=check_member)
 
     def restore(self):
         folder = self.path('downloads_folder') / 'Pocket-Toolbox-Backups'
-        path = self.choose(sorted(folder.glob('pocket-*.tar.gz'), reverse=True), lambda p: p.name)
+        path = self.choose(sorted([*folder.glob('pocket-*.tar.gz.age'),*folder.glob('pocket-*.tar.gz')], reverse=True), lambda p: p.name)
         if not path: return
-        with tarfile.open(path, 'r:gz') as source, tempfile.TemporaryDirectory() as temporary:
+        with decrypted_archive(path,self.root) as plain,tarfile.open(plain, 'r:gz') as source,tempfile.TemporaryDirectory(prefix='.stage-',dir=self.root) as temporary:
             staged, seen = [], set()
-            for member in source.getmembers():
+            total=0
+            for index,member in enumerate(source):
+                total+=member.size
+                if index>=MAX_ARCHIVE_MEMBERS or member.size<0 or member.size>MAX_MEMBER_BYTES or total>MAX_ARCHIVE_BYTES:raise ValueError('Backup exceeds safe restore limits.')
                 name = PurePosixPath(member.name)
                 if (name.is_absolute() or '..' in name.parts or not member.isfile() or
                     not (str(name) == 'config.json' or (len(name.parts)>1 and name.parts[0]=='data'))):

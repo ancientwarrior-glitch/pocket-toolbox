@@ -9,6 +9,7 @@ import sqlite3
 import tarfile
 import tempfile
 import unittest
+import shutil
 
 SOURCE = Path(__file__).resolve().parents[1]
 def module(name, path):
@@ -20,8 +21,19 @@ def module(name, path):
 app = module('pocket_app', SOURCE / 'src/app.py')
 installer = module('pocket_install', SOURCE / 'src/install.py')
 
+@contextlib.contextmanager
+def archive_fixture(path,root):
+    # Archive layout tests isolate cryptography; real age round trips have a separate test.
+    yield path
+
+def encrypt_fixture(source,destination):
+    shutil.copyfile(source,destination)
+    return destination
+
 class ToolboxTests(unittest.TestCase):
     def setUp(self):
+        self.crypto_patch=patch.object(app,'encrypt_archive',side_effect=encrypt_fixture);self.crypto_patch.start()
+        self.decrypt_patch=patch.object(app,'decrypted_archive',side_effect=archive_fixture);self.decrypt_patch.start()
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
         self.root = self.base / 'app'
@@ -36,6 +48,7 @@ class ToolboxTests(unittest.TestCase):
         self.output.__enter__()
 
     def tearDown(self):
+        self.crypto_patch.stop();self.decrypt_patch.stop()
         self.output.__exit__(None,None,None)
         self.temporary.cleanup()
 
@@ -103,7 +116,7 @@ class ToolboxTests(unittest.TestCase):
         with patch('builtins.input',side_effect=['1','RESTORE','']): self.app.restore()
         self.assertEqual(note.read_text(),'Before')
         self.assertEqual(self.app.sql('SELECT cents FROM entries')[0][0],100)
-        archives = list((self.base/'downloads/Pocket-Toolbox-Backups').glob('*.tar.gz'))
+        archives = list((self.base/'downloads/Pocket-Toolbox-Backups').glob('*.tar.gz.age'))
         self.assertEqual(len(archives),2)
         snapshots = []
         for path in archives:
@@ -131,6 +144,21 @@ class ToolboxTests(unittest.TestCase):
         original = self.app.config_path.read_bytes()
         with patch('builtins.input',side_effect=['1']),self.assertRaises(ValueError): self.app.restore()
         self.assertEqual(self.app.config_path.read_bytes(),original)
+
+    def test_restore_limits_member_size_before_writing(self):
+        self.bad_archive('data/oversized.txt',b'fixture payload')
+        with patch.object(app,'MAX_MEMBER_BYTES',4),patch('builtins.input',side_effect=['1']),self.assertRaisesRegex(ValueError,'limits'):
+            self.app.restore()
+        self.assertFalse((self.app.data/'oversized.txt').exists())
+
+    def test_app_rejects_symlinked_private_root(self):
+        target=self.base/'target';target.mkdir();link=self.base/'linked';link.symlink_to(target,target_is_directory=True)
+        with self.assertRaises(ValueError):app.App(link)
+
+    def test_backup_refuses_files_that_restore_would_reject(self):
+        (self.app.data/'large.txt').write_text('fixture payload')
+        with patch.object(app,'MAX_MEMBER_BYTES',4),self.assertRaisesRegex(ValueError,'limits'):self.app.backup()
+        self.assertEqual(list((self.base/'downloads/Pocket-Toolbox-Backups').glob('*.age')),[])
 
     def bad_archive(self,name,content):
         folder = self.base/'downloads/Pocket-Toolbox-Backups'

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 beta — 2026-10-25
+
+- New full backups use age passphrase encryption; restore decrypts privately and checks expanded-size/member limits.
+- Owner-only private files/directories, symlink refusal and private Finance exports.
+- Sessions expire after idle/absolute limits, with Lock now and best-effort background blanking.
+- Hashed CSP, anti-framing/cross-origin headers, bounded connections and security tests including real age round trips.
+- Added a documented threat model; live records remain unencrypted and old plaintext copies are not removed.
+
 ## 0.2.0 — 2026-10-25 (beta)
 
 - Added full Personal/Business Finance, inventory and production costing, linked invoices/payments/returns, goals, manual portfolios and trading records.

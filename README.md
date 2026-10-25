@@ -1,4 +1,4 @@
-# Pocket Toolbox — 0.2.0 — Finance & visual boards
+# Pocket Toolbox — 0.2.1 beta — Finance, boards & private backups
 
 A numbered personal workstation for Termux on Android. Distributed as an empty, configurable starter kit.
 
@@ -54,7 +54,7 @@ Then run:
 pocket
 ```
 
-Dependencies installed by `install.sh`: Python, nano, Newsboat and poppler (`pdftotext`). No root access or Termux:API add-on is required. The installer creates only its own `pocket` command and `~/.local/share/pocket-toolbox`; it does not edit shell startup files or overwrite existing `menu`, `rss`, or personal records. Reinstalling preserves settings/data and retains the previous application source. A conflicting unrelated `pocket` command causes installation to stop.
+Dependencies installed by `install.sh`: Python, nano, Newsboat, poppler (`pdftotext`) and age for encrypted backups. No root access or Termux:API add-on is required. The installer creates only its own `pocket` command and `~/.local/share/pocket-toolbox`; it does not edit shell startup files or overwrite existing `menu`, `rss`, or personal records. Reinstalling preserves settings/data and retains the previous application source. A conflicting unrelated `pocket` command causes installation to stop.
 
 ## Customize with ChatGPT
 
@@ -100,11 +100,17 @@ Grant shared-storage access with `termux-setup-storage`. If a book opens through
 
 ## Backup, restore and privacy
 
-Records/settings live under `~/.local/share/pocket-toolbox`. Backups go to your configured Downloads folder under `Pocket-Toolbox-Backups`. Finance and checklist backup files are included; SQLite databases are copied through the SQLite backup API. They contain your private records, favorites, RSS state and settings; they are **not** public starter kits. Books, copied media, other phone files and the program itself are excluded. Keep the source ZIP or repository checkout for reinstalling the program; then restore a compatible record backup. Copy important backups/media off the phone separately.
+Records/settings live under `~/.local/share/pocket-toolbox`. New full backups go to your configured Downloads folder under `Pocket-Toolbox-Backups` as encrypted `.tar.gz.age` files. You enter a passphrase into age locally; the toolbox does not store it. Keep it safely: a lost passphrase cannot be recovered. No plaintext export fallback is used. Finance and checklist backup files are included; SQLite databases are copied through the SQLite backup API. They contain your private records, favorites, RSS state and settings; they are **not** public starter kits. Books, copied media, other phone files and the program itself are excluded. Keep the source ZIP or repository checkout for reinstalling the program; then restore a compatible record backup. Copy important backups/media off the phone separately.
 
-Restore accepts this kit's `pocket-*.tar.gz` format only, validates members and the database, stages files, asks you to type `RESTORE`, and backs up the current state first. Matching records/settings are replaced; extra files remain. It rejects links and unsafe archive paths. A storage failure can still interrupt a multi-file restore; the pre-restore snapshot is retained. Backups from the original personalized `menu` are not compatible with public `pocket`. Once a Finance database exists, a pre-0.2 archive without Finance is refused to avoid mixing old and new money records; restore such an archive in a separate install instead.
+Restore accepts this kit's encrypted `pocket-*.tar.gz.age` archives and earlier plaintext `pocket-*.tar.gz` backups, validates members and the database, stages files privately, asks you to type `RESTORE`, and makes a new encrypted backup of the current state first. Matching records/settings are replaced; extra files remain. It rejects links and unsafe archive paths. A storage failure can still interrupt a multi-file restore; the pre-restore snapshot is retained. Backups from the original personalized `menu` are not compatible with public `pocket`. Once a Finance database exists, a pre-0.2 archive without Finance is refused to avoid mixing old and new money records; restore such an archive in a separate install instead.
 
 The program has no telemetry or automatic publishing. Network activity occurs when using RSS, video lookup or external links. The duplicate finder hashes candidates and writes a report without deleting anything. File search uses names and record text; PDF search can read existing PDF text and normalizes whitespace, but does not perform OCR on scanned images. Large scans can take time/memory.
+
+## Security and privacy
+
+Boards expire after 15 minutes without loading/saving and after one hour total. A Lock now button closes the session. Browser code attempts to blank/lock after 60 seconds hidden; suspended mobile timers cannot guarantee immediate background locking. Private files use owner-only permissions, and symbolic private-data paths are refused. CSV Finance exports now stay in `data/Finance/Exports`; Finance-only snapshots stay privately in `data/Finance/Backups`.
+
+Live records are not encrypted by the app. This is not a vault and does not defend against rooted/compromised devices, malicious software running under the same Termux account or malicious source updates. Old plaintext backups/exports are left untouched; remove them deliberately only after verifying an encrypted backup. See [SECURITY.md](SECURITY.md) for the threat model, safeguards and remaining limits.
 
 ## Testing and release status
 
@@ -115,7 +121,7 @@ python -m unittest discover -s tests -v
 python -m unittest discover -s finance -v
 ```
 
-Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.0 is a beta**, with blank records and no private configuration bundled.
+Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.1 is a beta**, with blank records and no private configuration bundled.
 
 ## Support
 

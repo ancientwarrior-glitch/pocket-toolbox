@@ -5,5 +5,5 @@ if ! command -v pkg >/dev/null || [[ -z "${PREFIX:-}" ]]; then
   echo 'Run this installer inside Termux on Android.' >&2
   exit 1
 fi
-pkg install -y python nano newsboat poppler
+pkg install -y python nano newsboat poppler age
 python src/install.py "$PWD"

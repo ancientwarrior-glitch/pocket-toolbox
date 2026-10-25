@@ -9,6 +9,7 @@ import tempfile
 import threading
 
 from engine import Finance, quantity_in
+from pocket_security import no_links,private_dir,private_file
 
 
 def render_editor(state):
@@ -64,6 +65,7 @@ class BoardActions:
         if kind not in ('shopping', 'uploads'):
             raise ValueError('Unknown list.')
         path = self.organizer / (kind + '.json')
+        no_links(path)
         raw = path.read_bytes() if path.exists() else b'[]'
         try:
             rows = json.loads(raw)
@@ -119,12 +121,13 @@ class BoardActions:
                 if status not in ('To upload', 'Published', 'Download checked'):
                     raise ValueError('Choose a supported upload status.')
                 rows[index]['status'] = status
-        path.parent.mkdir(parents=True, exist_ok=True)
+        private_dir(path.parent)
         backups = self.organizer / 'Board-Backups'
-        backups.mkdir(exist_ok=True)
+        private_dir(backups)
         if path.exists():
             # Exact previous bytes are retained once per content version.
             backup = backups / (kind + '-' + digest(raw) + '.json')
+            no_links(backup)
             if not backup.exists():
                 with backup.open('xb') as out:
                     out.write(raw)
@@ -238,8 +241,9 @@ class BoardActions:
             elif action == 'note-add':
                 text = self.text(request, 'text', 8000)
                 folder = self.public_root/'data/notes' if self.public_root else self.home / 'Workspace/Notes'
-                folder.mkdir(parents=True, exist_ok=True)
+                private_dir(folder)
                 path = folder / ('board-' + request_id + '.txt')
+                no_links(path)
                 if path.exists():
                     if path.read_text() != text + '\n':
                         raise ValueError('Request ID already used for a different note.')
