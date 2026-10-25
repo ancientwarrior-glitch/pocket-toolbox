@@ -43,23 +43,55 @@ def render(data):
     serialized=json.dumps(data,ensure_ascii=False).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
     return PAGE.replace('__DATA__',serialized)
 
-def serve(html,opener=None,pause=input,pages=None):
+def serve(html,opener=None,pause=input,pages=None,api=None):
     token='/'+secrets.token_urlsafe(24)
-    routes={token:html.encode('utf-8')}
+    routes={token:html}
     for name,page in (pages or {}).items():
         if not name or any(c not in 'abcdefghijklmnopqrstuvwxyz-' for c in name):
             raise ValueError('Invalid dashboard page name.')
-        routes[token+'/'+name]=page.encode('utf-8')
+        routes[token+'/'+name]=page
     class Handler(BaseHTTPRequestHandler):
+        def valid_host(self):
+            return self.headers.get('Host')==f'127.0.0.1:{self.server.server_port}'
         def do_GET(self):
+            if not self.valid_host():
+                self.send_error(403);return
             if self.path not in routes:
                 self.send_error(404);return
             payload=routes[self.path]
+            try:payload=(payload() if callable(payload) else payload).encode('utf-8')
+            except Exception:
+                self.send_error(500,'Could not load board. Return to Termux and reopen.');return
             self.send_response(200)
             self.send_header('Content-Type','text/html; charset=utf-8')
             self.send_header('Cache-Control','no-store')
             self.send_header('X-Content-Type-Options','nosniff')
             self.send_header('Referrer-Policy','no-referrer')
+            self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload)
+        def do_POST(self):
+            origin=f'http://127.0.0.1:{self.server.server_port}'
+            if not self.valid_host() or self.headers.get('Origin')!=origin:
+                self.send_error(403);return
+            if api is None or self.path!=token+'/api':
+                self.send_error(404);return
+            if self.headers.get('Content-Type','').split(';')[0]!='application/json':
+                self.send_error(415);return
+            try:
+                length=int(self.headers.get('Content-Length','0'))
+                if not 0<length<=65536:raise ValueError('Request is too large or empty.')
+                self.connection.settimeout(10)
+                request=json.loads(self.rfile.read(length))
+                if not isinstance(request,dict):raise ValueError('Invalid request.')
+                result=api(request);status=200
+            except (ValueError,KeyError,TypeError) as error:
+                result={'ok':False,'message':str(error)};status=400
+            except Exception:
+                result={'ok':False,'message':'Could not save. Return to Termux to check the records before retrying.'};status=500
+            payload=json.dumps(result).encode('utf-8')
+            self.send_response(status)
+            self.send_header('Content-Type','application/json')
+            self.send_header('Cache-Control','no-store')
+            self.send_header('X-Content-Type-Options','nosniff')
             self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload)
         def log_message(self,*args):pass
     server=ThreadingHTTPServer(('127.0.0.1',0),Handler)

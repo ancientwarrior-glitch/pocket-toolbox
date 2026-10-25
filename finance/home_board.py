@@ -70,7 +70,7 @@ def home_data(home=None, today=None):
                 backup=latest, issues=issues)
 
 
-def render_home(data):
+def render_home(data, editor=None):
     escape = lambda value: html.escape(str(value), quote=True)
     def listing(items, empty):
         if not items:
@@ -89,21 +89,33 @@ def render_home(data):
         '<section><h2>Latest toolbox backup</h2>' + backup_html + '</section>')
     replacements = dict(date=escape(data['today']), books=len(data['reading']), shopping=len(data['shopping']),
                         uploads=len(data['waiting']), batches=len(data['batches']), sections=sections,
-                        issues=listing(data['issues'], ''))
-    return re.sub(r'__([A-Z]+)__', lambda match: str(replacements[match[1].lower()]), PAGE)
+                        issues=listing(data['issues'], ''),mode='Saved records and editing controls.' if editor is not None else 'Read-only snapshot.')
+    page=re.sub(r'__([A-Z]+)__', lambda match: str(replacements[match[1].lower()]), PAGE)
+    if editor is not None:
+        from board_actions import render_editor
+        page=page.replace('<!--EDITOR-->',render_editor(editor))
+    return page
 
 
 def open_home(finance, home=None, opener=None, pause=input):
     from charts import dashboard_data, render, serve
     from business_board import board_data, render_board
-    serve(render_home(home_data(home)), opener=opener, pause=pause,
-          pages={'finance': render(dashboard_data(finance)), 'business': render_board(board_data(finance))})
+    from board_actions import BoardActions
+    from contextlib import closing
+    from engine import Finance
+    actions=BoardActions(home or Path.home(),finance.path)
+    def money_page():
+        with closing(Finance(finance.path)) as current:return render(dashboard_data(current))
+    def business_page():
+        with closing(Finance(finance.path)) as current:return render_board(board_data(current))
+    serve(lambda:render_home(home_data(home),actions.state()), opener=opener, pause=pause,
+          pages={'finance': money_page, 'business': business_page},api=actions)
 
 
 PAGE = '''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Yayo’s dashboard</title><style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#101521;color:#f4f3fc;font:16px/1.55 system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:28px 16px 48px}header{margin-bottom:22px}.tag{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#bea9ff}h1{font-size:clamp(30px,6vw,46px);letter-spacing:-1px;margin:4px 0}h2{font-size:20px;margin:0 0 14px}p{color:#bdc4d7;margin:8px 0}small{color:#a8b3ca;font-size:13px}nav{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0}a{color:#f1ecff;text-decoration:none;background:#30264c;border:1px solid #645284;border-radius:12px;padding:14px 20px;min-height:48px}a:hover,a:focus{background:#483663;outline:2px solid #bea9ff}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.card,section{background:#1a2233;border:1px solid #34405a;border-radius:16px;padding:20px}.card strong{display:block;font-size:32px;color:#c8b8ff}.card span{color:#bdc4d7;font-size:13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}li{padding:10px 0;border-bottom:1px solid #303d55;overflow-wrap:anywhere}ul{padding-left:20px;margin:0 0 15px}.empty{padding:15px 0}section strong{overflow-wrap:anywhere}footer{color:#a8b3ca;font-size:13px;margin-top:24px}@media(max-width:650px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.card,section{padding:16px}main{padding:20px 12px}}
 </style></head><body><main><header><div class="tag">Pocket Toolbox · on your phone</div><h1>Yayo’s dashboard</h1><p>__DATE__ · Your saved records, together.</p></header><nav><a id="finance" href="#">Finance graphs →</a><a id="business" href="#">Jabones Yayo board →</a></nav>
 <div class="cards"><div class="card"><strong>__BOOKS__</strong><span>Currently reading</span></div><div class="card"><strong>__SHOPPING__</strong><span>Shopping items needed</span></div><div class="card"><strong>__UPLOADS__</strong><span>Videos to upload</span></div><div class="card"><strong>__BATCHES__</strong><span>Batch notes</span></div></div><div class="grid">__SECTIONS__</div>__ISSUES__
-<footer>Read-only snapshot. Keep Termux’s board screen open while using the links. Return there and press Enter when finished. Reopen Dashboard to refresh. Books, shopping and journals are managed from the terminal menus. Records stay on your phone; no external scripts or uploads.</footer></main><script>
+<!--EDITOR--><footer>__MODE__ Keep Termux’s board screen open while using the links. Return there and press Enter when finished. Reopen Dashboard to refresh. Books and journals are managed from the terminal menus. Records stay on your phone; no external scripts or uploads.</footer></main><script>
 const root=location.pathname.replace(/\\/$/,'');for(const name of ['finance','business'])document.getElementById(name).href=root+'/'+name;
 </script></body></html>'''

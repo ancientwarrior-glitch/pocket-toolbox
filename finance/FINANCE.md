@@ -1,4 +1,4 @@
-# Pocket Finance — 0.2.0-beta.4 for the ORIGINAL toolbox
+# Pocket Finance — 0.2.0-beta.5 for the ORIGINAL toolbox
 
 This is an additional, offline financial record system for people running the original `menu` scripts. The stable public `pocket` starter is not replaced. Finance is a set of financial workflows and reports, not an Excel cell-grid/formula editor.
 
@@ -53,13 +53,23 @@ Use the new Finance system for subsequent financial records. Its database is sep
 
 ## Main toolbox visual dashboard
 
+### Editing from the main board
+
+The bottom of Dashboard now has controls to add/check/uncheck shopping items, change an existing video's status to To upload / Published / Download checked, save a new quick note, and record simple Income/Expense entries using existing Finance accounts and optional matching categories. Upload changes affect the tracker only, not media files or the remote site. New quick notes save under `~/Everyday/Notes/board-<request-id>.txt`; the original quick-note writer remains unchanged.
+
+Do not enter stock purchases, sales invoices, debt payments or transfers through the simple cash form; use their originating Finance menus to avoid duplicate accounting. New board cash entries remain editable through the existing cash correction menu. Repeated cash requests have durable IDs in the import receipts table so a network retry does not duplicate the movement. Failed validation rolls back both the movement and receipt. Notes also use unique request filenames. List retries are recognized within the running board session; stale list revisions are refused, requiring a refresh.
+
+List writes retain all existing row fields and save exact previous JSON bytes under `Everyday/Organizer/Board-Backups`, then replace files atomically. Unsupported/corrupt formats are not overwritten. Avoid editing the same list simultaneously from a terminal editor: revision checks catch changes before save, but external writers do not share the board's lock. Lists, notes and Finance keep their original separate storage formats; there is no cross-file transaction.
+
+The server accepts only allowlisted JSON actions under its random local URL, validates the localhost Host and same-origin Origin headers, caps request size and offers no arbitrary file or command API. Each HTTP handler opens its own SQLite connection. Finance/business graphs reached from the main board load fresh saved records on navigation/reload. Keep the Termux session running while saving; an already loaded page cannot save after the server stops. The Finance graphs and business board themselves remain report views; edit controls are on the main board.
+
 After updating, the original Dashboard button (normally main menu 11) opens the visual home board. Finance option 20 also opens it. The installer saves the previous `~/bin/toolbox-home.py` and adds a small launcher; calling that script with `help` still runs the original terminal guide. Reinstalling does not duplicate the launcher. If the original script is absent, Finance option 20 remains available.
 
 The home board reads the original formats shown by the user's dashboard: `Everyday/Jabones-Yayo/reading-log.json` (records with a `status` field), `Everyday/Organizer/shopping.json`, `uploads.json`, `batch-dates.json`, and batch-note filenames under `Everyday/Jabones-Yayo/Batches`. It displays current reads, unchecked shopping, batch ages, waiting uploads and saved publication/download-check counts. It only checks today's journal file exists; journal and batch-note bodies are not exposed.
 
-The latest `.tar.gz`, `.tgz` or `.zip` file in `~/storage/downloads/Termux-Backups` is chosen by modification time. This is a file-presence check, not verification that the archive is complete or restorable. Missing records show empty states; unreadable/wrong top-level JSON formats show a warning. No original records are edited or migrated.
+The latest `.tar.gz`, `.tgz` or `.zip` file in `~/storage/downloads/Termux-Backups` is chosen by modification time. This is a file-presence check, not verification that the archive is complete or restorable. Missing records show empty states; unreadable/wrong top-level JSON formats show a warning. Opening the board does not migrate existing records; edits only happen when you use the save controls.
 
-Finance/business links serve their read-only snapshots under the same random local route. Keep the Termux screen open while using links, then press Enter there to stop the server. Reopen the dashboard after changing records. Terminal menus still handle editing, opening books and tracking statuses. These boards use the original personal paths and names on this beta branch; they are not yet the generic public starter release.
+Finance/business links serve their report views under the same random local route. Keep the Termux screen open while using links, then press Enter there to stop the server. Saving refreshes the home board; use Refresh board for changes made elsewhere. Terminal menus still handle opening books, journals, production, invoices, and the other full Finance actions. These boards use the original personal paths and names on this beta branch; they are not yet the generic public starter release.
 
 ## Business board
 
