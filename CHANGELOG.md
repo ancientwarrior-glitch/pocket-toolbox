@@ -22,3 +22,5 @@
 ## 0.1.0
 
 Initial configurable terminal toolbox with books, notes, journals, RSS, project records and backups.
+
+- Original-menu local updater: Finance backup submenu now includes Create, Verify, Share and Show folder; rerunning updates the existing menu label without duplicating entries.
