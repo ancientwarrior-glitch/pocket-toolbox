@@ -89,6 +89,13 @@ def encrypt_archive(source,destination):
     finally:partial.unlink(missing_ok=True)
 
 
+def verify_archive(source):
+    """Authenticate/decrypt to the null device; never write a plaintext copy."""
+    source=Path(source)
+    if not source.is_file() or not source.name.endswith('.age'):raise ValueError('Choose an encrypted .age backup.')
+    return subprocess.run([age_binary(),'--decrypt',str(source)],stdout=subprocess.DEVNULL,env=clean_env(),check=False).returncode==0
+
+
 @contextmanager
 def decrypted_archive(source,private_root):
     source=Path(source)

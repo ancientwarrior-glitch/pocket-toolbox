@@ -15,7 +15,7 @@ import urllib.error
 from unittest.mock import patch
 
 from board_server import protect_page,serve
-from pocket_security import private_dir,harden_tree,encrypt_archive,decrypted_archive
+from pocket_security import private_dir,harden_tree,encrypt_archive,decrypted_archive,verify_archive
 
 
 class SecurityTests(unittest.TestCase):
@@ -105,13 +105,23 @@ class SecurityTests(unittest.TestCase):
                 with self.assertRaises(ValueError):encrypt_archive(source,target)
             self.assertEqual(list(root.iterdir()),[source])
 
+    def test_verification_discards_plaintext_and_does_not_pass_password_arguments(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source=Path(temporary)/'backup.age';source.write_bytes(b'fixture')
+            with patch('pocket_security.shutil.which',return_value='/fixture/age'),patch('pocket_security.subprocess.run') as run:
+                run.return_value.returncode=0
+                self.assertTrue(verify_archive(source))
+                self.assertEqual(run.call_args.args[0],['/fixture/age','--decrypt',str(source)])
+                self.assertEqual(run.call_args.kwargs['stdout'],__import__('subprocess').DEVNULL)
+                self.assertEqual(list(Path(temporary).iterdir()),[source])
+
     @unittest.skipUnless(shutil.which('age') and os.name=='posix','real age CLI + PTY required')
     def test_real_age_round_trip_wrong_password_and_tampering(self):
         import pty
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);(root/'plain').write_bytes(b'private fixture: no user records')
             module=str(Path(__file__).parent)
-            code='import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);from pocket_security import encrypt_archive,decrypted_archive;r=Path(sys.argv[2]);encrypt_archive(r/"plain",r/"backup.age");\nwith decrypted_archive(r/"backup.age",r) as p: assert p.read_bytes()==(r/"plain").read_bytes()'
+            code='import sys;from pathlib import Path;sys.path.insert(0,sys.argv[1]);from pocket_security import encrypt_archive,decrypted_archive,verify_archive;r=Path(sys.argv[2]);encrypt_archive(r/"plain",r/"backup.age");assert verify_archive(r/"backup.age");\nwith decrypted_archive(r/"backup.age",r) as p: assert p.read_bytes()==(r/"plain").read_bytes()'
             def terminal(program,password):
                 pid,fd=pty.fork()
                 if pid==0:os.execv(sys.executable,[sys.executable,'-c',program,module,str(root)])

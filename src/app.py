@@ -23,7 +23,7 @@ from urllib.parse import urlsplit, quote
 _security_folder=Path(__file__).resolve().parent/'finance'
 if not _security_folder.is_dir():_security_folder=Path(__file__).resolve().parents[1]/'finance'
 sys.path.insert(0,str(_security_folder))
-from pocket_security import private_dir,private_file,harden_tree,encrypt_archive,decrypted_archive,MAX_ARCHIVE_BYTES,MAX_MEMBER_BYTES,MAX_ARCHIVE_MEMBERS
+from pocket_security import private_dir,private_file,harden_tree,encrypt_archive,decrypted_archive,verify_archive,MAX_ARCHIVE_BYTES,MAX_MEMBER_BYTES,MAX_ARCHIVE_MEMBERS
 sys.path.pop(0)
 
 VERSION = '0.2.1-beta'
@@ -567,12 +567,62 @@ class App:
         if folder.is_relative_to(self.root): raise ValueError('Backup folder must be outside the app folder.')
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / ('pocket-' + stamp() + '.tar.gz.age')
+        print('Choose a passphrase you will keep safely. If you leave it empty, age prints a generated passphrase above Saved.')
+        print('Save that passphrase separately before leaving this screen. It is not stored by the toolbox.')
         with tempfile.TemporaryDirectory(prefix='.backup-',dir=self.root) as temporary:
             plain=Path(temporary)/'archive.tar.gz'
             self._write_archive(plain,temporary)
             encrypt_archive(plain,path)
         print('Encrypted backup saved:', path)
         return path
+
+    def encrypted_backups(self):
+        folder=self.path('downloads_folder')/'Pocket-Toolbox-Backups'
+        return sorted((p for p in folder.glob('pocket-*.tar.gz.age') if p.is_file()),key=lambda p:p.stat().st_mtime,reverse=True)
+
+    def verify_backup(self,path=None):
+        path=path or self.choose(self.encrypted_backups(),lambda p:p.name)
+        if not path:return False
+        print('Checking:',path.name)
+        print('Enter this backup\'s passphrase locally. Records will not be restored or changed.')
+        success=verify_archive(path)
+        print('Backup decryption verified. No records were restored.' if success else 'Verification failed. Check the passphrase; the existing records remain unchanged.')
+        return success
+
+    def share_backup(self,path=None):
+        path=path or self.choose(self.encrypted_backups(),lambda p:p.name)
+        if not path:return
+        if not self.verify_backup(path):return
+        if not shutil.which('termux-open'):
+            print('Android sharing is unavailable here. File:',path)
+            return
+        print('Opening the Android share chooser for the encrypted file only. Choose an app and confirm the upload there.')
+        result=subprocess.run(['termux-open','--send','--chooser','--content-type','application/octet-stream',str(path)],check=False)
+        if result.returncode:print('Could not open sharing. Find this file in your configured Downloads folder:',path)
+        print('No upload is confirmed by the toolbox. Keep the passphrase separate from the shared file.')
+
+    def backup_location(self):
+        folder=self.path('downloads_folder')/'Pocket-Toolbox-Backups'
+        print('Backup folder:',folder)
+        print('Use folder browsing in Android Files; category filters may hide .age files.')
+        for path in self.encrypted_backups():print(' ',path.name)
+        print('Or use Share encrypted backup to send the chosen file directly to another app.')
+        self.pause()
+
+    def create_backup(self):
+        path=self.backup()
+        print('Keep the passphrase shown above. Each generated passphrase belongs to its own backup.')
+        choice=input('v: verify now | s: verify and share | Enter: return after saving the passphrase: ').strip().lower()
+        if choice=='v':self.verify_backup(path);self.pause()
+        elif choice=='s':self.share_backup(path);self.pause()
+
+    def backups(self):
+        self.menu('Encrypted backups',[
+            ('Create encrypted backup',self.create_backup),
+            ('Verify backup passphrase (no restore)',lambda:(self.verify_backup(),self.pause())),
+            ('Share encrypted backup (verify first)',lambda:(self.share_backup(),self.pause())),
+            ('Show backup folder and filenames',self.backup_location),
+            ('Restore a backup',self.restore)])
 
     def _write_archive(self,path,temporary):
         count=0;expanded=0
@@ -784,7 +834,7 @@ This release is a starter kit. Android app handoffs require a phone test.''')
             ('Recent downloads',self.downloads),('Folder shortcuts',self.shortcuts),
             ('Search everything',self.search),('Search PDF text',self.pdf_search),
             ('Find duplicate files',self.duplicates),('Export reading notes',self.export_notes),
-            ('Back up records',lambda:(self.backup(),self.pause())),('Restore records',self.restore),
+            ('Backups: create, verify and share',self.backups),('Restore records',self.restore),
             ('Settings',self.settings),('Help',self.help),
             ('Finance graphs',lambda:self.finance('graphs')),
             ('Business board',lambda:self.finance('business_board')),

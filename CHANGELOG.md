@@ -2,6 +2,8 @@
 
 ## 0.2.1 beta — 2026-10-25
 
+- Backup usability: named Create/Verify/Share/Show folder actions, generated-passphrase guidance, immediate verification after creation, and verification before Android sharing. No manual verification snippets are required.
+
 - New full backups use age passphrase encryption; restore decrypts privately and checks expanded-size/member limits.
 - Owner-only private files/directories, symlink refusal and private Finance exports.
 - Sessions expire after idle/absolute limits, with Lock now and best-effort background blanking.

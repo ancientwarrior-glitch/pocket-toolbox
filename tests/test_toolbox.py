@@ -202,4 +202,34 @@ class ToolboxTests(unittest.TestCase):
     def test_blank_library_input_and_exit(self):
         with patch('builtins.input',side_effect=['','q']): self.app.library()
 
+    def test_backup_verification_never_invokes_restore(self):
+        path=self.base/'verified.tar.gz.age';path.write_bytes(b'fixture')
+        with patch.object(app,'verify_archive',return_value=True) as verify,patch.object(self.app,'restore') as restore:
+            self.assertTrue(self.app.verify_backup(path))
+            verify.assert_called_once_with(path);restore.assert_not_called()
+
+    def test_share_requires_verification_and_only_hands_off_ciphertext(self):
+        path=self.base/'backup.tar.gz.age';path.write_bytes(b'fixture')
+        with patch.object(self.app,'verify_backup',return_value=False),patch.object(app.subprocess,'run') as run:
+            self.app.share_backup(path);run.assert_not_called()
+        with patch.object(self.app,'verify_backup',return_value=True),patch.object(app.shutil,'which',return_value='/fixture/termux-open'),patch.object(app.subprocess,'run') as run:
+            run.return_value.returncode=0;self.app.share_backup(path)
+            self.assertEqual(run.call_args.args[0],['termux-open','--send','--chooser','--content-type','application/octet-stream',str(path)])
+
+    def test_missing_android_share_shows_file_without_network_action(self):
+        path=self.base/'backup.tar.gz.age';path.write_bytes(b'fixture')
+        with patch.object(self.app,'verify_backup',return_value=True),patch.object(app.shutil,'which',return_value=None),patch.object(app.subprocess,'run') as run:
+            self.app.share_backup(path);run.assert_not_called()
+
+    def test_public_backup_menu_has_discoverable_actions(self):
+        with patch.object(self.app,'menu') as menu:self.app.backups()
+        names=[label for label,action in menu.call_args.args[1]]
+        self.assertEqual(len(names),5)
+        self.assertTrue(any('Verify' in name for name in names));self.assertTrue(any('Share' in name for name in names))
+
+    def test_new_backup_offers_verification_before_leaving(self):
+        path=self.base/'backup.tar.gz.age'
+        with patch.object(self.app,'backup',return_value=path),patch.object(self.app,'verify_backup') as verify,patch('builtins.input',side_effect=['v','']):
+            self.app.create_backup();verify.assert_called_once_with(path)
+
 if __name__ == '__main__': unittest.main()
