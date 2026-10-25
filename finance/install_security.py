@@ -10,7 +10,7 @@ import sys
 from pocket_security import private_dir,harden_tree,private_umask,no_links
 
 MARKER='# Pocket local security update 0.2.1'
-FILES=['engine.py','charts.py','board_server.py','pocket_security.py','secure_backup.py','secure_compat.py','cash_import.py','import_ui.py','statement_import.py']
+FILES=['engine.py','charts.py','board_server.py','pocket_security.py','secure_backup.py','secure_compat.py','cash_import.py','import_ui.py','statement_import.py','app_lock.py']
 
 def patch_main(text):
     text=text.replace('Import income/expenses from CSV or Excel','Import records: CSV, Excel or prepared statement')

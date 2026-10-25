@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4 beta — 2026-10-25
+
+- Added password-gated terminal sessions using salted scrypt password verification. First launch creates a separate toolbox password; each new session requires it.
+- Exit, Ctrl+], the pocket-lock command, inactivity and browser Lock now terminate the protected process group and its board servers. Browser interaction extends activity without background status polls keeping a session alive.
+- Added an original-installation password installer for recognized menus, record scripts and widgets. Local backups preserve previous scripts; records and existing backup passwords are unchanged.
+- This is explicitly an **interface lock**, not encryption of working files or a security boundary against access to the Termux shell. Working-record encryption is still pending.
+
 ## 0.2.3 beta — 2026-10-25
 
 - Prepared JSON statements now preserve source evidence and review events alongside explicitly classified cash movements. Preview, stable event receipts, changed-ID rejection, atomic saves and pre-import snapshots protect records.

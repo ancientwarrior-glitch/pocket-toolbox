@@ -456,4 +456,7 @@ def main():
     except (ValueError,InvalidOperation,sqlite3.Error,OSError) as error:print('Could not finish:',error)
     finally:ui.f.close()
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    from app_lock import guard
+    guard()
+    main()

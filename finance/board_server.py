@@ -22,9 +22,12 @@ function lock(){if(locked)return;locked=true;document.body.replaceChildren();set
 function check(){if(Date.now()>=deadline||hiddenAt!==null&&Date.now()-hiddenAt>=60000)lock()}
 document.getElementById('session-lock').addEventListener('click',lock);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=Date.now();setTimeout(check,60100)}else{check();hiddenAt=null}});
+let lastTouch=0;function activity(){if(locked||document.hidden||Date.now()-lastTouch<10000)return;lastTouch=Date.now();fetch(root+'/activity',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>{if(!r.ok){lock();return}return r.json()}).then(d=>{if(d&&d.remaining)deadline=Date.now()+d.remaining*1000}).catch(lock)};for(const event of ['pointerdown','keydown','scroll'])document.addEventListener(event,activity,{passive:true});
 window.addEventListener('pageshow',e=>{if(e.persisted)lock();else check()});setInterval(check,1000);
 setInterval(()=>{if(!locked)fetch(root+'/status',{cache:'no-store'}).then(r=>{if(!r.ok)lock()}).catch(lock)},10000);
 })();</script>'''.replace('__SECONDS__',str(max(0,seconds))).replace('__ROOT__',json.dumps(root))
+    from app_lock import authorized
+    if authorized():guard=guard.replace('Private session:', 'Password-protected toolbox: 5-minute inactivity lock; browser use counts as activity. Private session:')
     markup,script=guard.split('<script>',1)
     html=html.replace('<body>','<body>'+markup,1).replace('</body>','<script>'+script+'</body>',1)
     def hashes(tag):
@@ -45,7 +48,10 @@ def serve(html,opener=None,pause=input,pages=None,api=None,idle_seconds=IDLE_SEC
             now=time.monotonic()
             if now-started>=max_seconds or now-last[0]>=idle_seconds:expired.set()
             if expired.is_set():return 0
-            if touch:last[0]=now
+            if touch:
+                last[0]=now
+                from app_lock import touch as password_activity
+                password_activity()
             return min(max_seconds-(now-started),idle_seconds-(now-last[0]))
     class Handler(BaseHTTPRequestHandler):
         server_version="PocketBoard";sys_version=""
@@ -76,7 +82,7 @@ def serve(html,opener=None,pause=input,pages=None,api=None,idle_seconds=IDLE_SEC
             self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload)
         def do_POST(self):
             if not self.valid(write=True):self.fail(403,'Forbidden.');return
-            if self.path not in (token+'/api',token+'/lock') or self.path.endswith('/api') and api is None:self.fail(404,'Not found.');return
+            if self.path not in (token+'/api',token+'/lock',token+'/activity') or self.path.endswith('/api') and api is None:self.fail(404,'Not found.');return
             if not remaining():self.fail(410,'Session expired. Reopen it in Termux.');return
             if self.headers.get('Content-Type','').split(';')[0]!='application/json':self.fail(415,'Use JSON.');return
             if self.headers.get('Transfer-Encoding'):self.fail(400,'Unsupported request encoding.');return
@@ -87,7 +93,12 @@ def serve(html,opener=None,pause=input,pages=None,api=None,idle_seconds=IDLE_SEC
                 if len(body)!=size:raise ValueError('Incomplete request.')
                 request=json.loads(body)
                 if not isinstance(request,dict):raise ValueError('Invalid request.')
-                if self.path==token+'/lock':expired.set();result={'ok':True}
+                if self.path==token+'/activity':
+                    result={'ok':True,'remaining':remaining(touch=True)}
+                elif self.path==token+'/lock':
+                    expired.set();result={'ok':True}
+                    from app_lock import authorized,request_lock
+                    if authorized():request_lock()
                 else:
                     if not remaining(touch=True):self.fail(410,'Session expired.');return
                     result=api(request)

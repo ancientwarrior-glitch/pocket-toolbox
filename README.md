@@ -1,4 +1,4 @@
-# Pocket Toolbox — 0.2.3 beta — Finance, boards & private backups
+# Pocket Toolbox — 0.2.4 beta — Finance, boards & private backups
 
 A numbered personal workstation for Termux on Android. Distributed as an empty, configurable starter kit.
 
@@ -152,7 +152,7 @@ python -m unittest discover -s tests -v
 python -m unittest discover -s finance -v
 ```
 
-Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.3 is a beta**, with blank records and no private configuration bundled.
+Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.4 is a beta**, with blank records and no private configuration bundled.
 
 ## Support
 
@@ -173,7 +173,7 @@ The launcher is `$PREFIX/bin/pocket`. App code/settings/records are in `~/.local
 - Termux file handoff: https://github.com/termux/termux-app/issues/4723
 
 
-## Prepared statements (0.2.3 beta)
+## Prepared statements (0.2.4 beta)
 
 The import action also accepts `pocket-statement-v1` JSON. Choose a file, read the paged preview, then type `IMPORT` to confirm. Enter `R` in the file-selection prompt to read saved source and review records. No file is uploaded.
 
@@ -197,3 +197,18 @@ A minimal generic example:
 ```json
 {"format":"pocket-statement-v1","source":"my-provider-history","currency":"MXN","events":[{"id":"example-1","date":"2026-01-01","description":"Example expense","scope":"Personal","kind":"Expense","amount":"-10.00","category":"Food"}]}
 ```
+
+
+## Toolbox password (0.2.4 beta)
+
+The first launch of an updated public `pocket` asks you to create and repeat a new password/passphrase of at least 12 characters. Typed characters are hidden. Each new terminal session asks for that password again before opening records. This password is separate from all encrypted-backup passphrases; changing one does not change the others. The stored verifier uses a random salt and scrypt; the password itself is not saved.
+
+Exit normally or press Ctrl+] to lock. `pocket-lock` requests a lock from another terminal. `pocket-password` changes the toolbox password after checking the current password. Five minutes without terminal input or browser interaction locks the session. Browser pointer/keyboard/scroll events extend activity; background status polling does not. Reading a static page for five minutes can therefore lock it. Browser Lock now also closes the protected toolbox session. Unsaved work can be lost when locking; complete a save before leaving. Browser hidden-tab locking remains in place. Close all old sessions after installing: an already running copy cannot retroactively become password protected.
+
+Original-menu users update their checkout, then run `python "$HOME/pocket-security-update/finance/install_passwords.py"`. It guards supported original menu/Finance/RSS/record scripts and shell/Python widgets, reports unrecognized entries, and preserves previous scripts privately on the device. It does not modify financial/journal records. Public users rerun `install.sh` instead.
+
+**Security scope:** this is an interface lock, not file encryption. It blocks ordinary entry through the guarded launchers and terminates their process group on lock. Someone able to use the Termux shell can read working files, edit the program, reset its local password verifier, or run an unguarded copy. Root access, malware, external readers, screenshots, shell history, copies/exports in shared storage and apps outside the protected process group are not protected by this lock. A terminal process killed by Android cannot clear a screenshot or control external apps. Keep the Android device lock enabled. Existing `.age` backups remain encrypted; encrypting all live working records is a separate unfinished feature. Do not describe this release as an encrypted vault.
+
+The lock verifier lives in Termux internal storage at `~/.config/pocket-toolbox-lock`, separate from record backups. On a fresh device, restore compatible records and choose a new toolbox password; old encrypted-backup passphrases are still needed to decrypt those backups. There is no online recovery service. Editing/removing a verifier is possible for someone with shell access; this is why it must not be confused with data encryption.
+
+Future work and the planned app direction are tracked in [ROADMAP.md](ROADMAP.md).

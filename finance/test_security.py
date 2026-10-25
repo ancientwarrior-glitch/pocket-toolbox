@@ -91,6 +91,26 @@ class SecurityTests(unittest.TestCase):
             except (urllib.error.URLError,ConnectionError,OSError):pass
         serve('<html><body>Fixture</body></html>',opener=opener,pause=lambda _:None,idle_seconds=.2,max_seconds=1)
 
+    def test_browser_activity_extends_idle_requires_same_origin(self):
+        def opener(url):
+            bad=urllib.request.Request(url+'/activity',data=b'{}',headers={'Origin':'https://outside.invalid','Content-Type':'application/json'})
+            with self.assertRaises(urllib.error.HTTPError) as error:urllib.request.urlopen(bad)
+            self.assertEqual(error.exception.code,403)
+            for _ in range(3):
+                time.sleep(.08)
+                good=urllib.request.Request(url+'/activity',data=b'{}',headers={'Origin':url.rsplit('/',1)[0],'Content-Type':'application/json'})
+                with urllib.request.urlopen(good) as response:self.assertGreater(json.load(response)['remaining'],0)
+            with urllib.request.urlopen(url+'/status') as response:self.assertTrue(json.load(response)['ok'])
+        serve('<html><body>Fixture</body></html>',opener=opener,pause=lambda _:None,idle_seconds=.2,max_seconds=2)
+
+    def test_board_lock_requests_parent_password_lock(self):
+        def opener(url):
+            request=urllib.request.Request(url+'/lock',data=b'{}',headers={'Origin':url.rsplit('/',1)[0],'Content-Type':'application/json'})
+            with urllib.request.urlopen(request) as response:self.assertTrue(json.load(response)['ok'])
+        with patch('app_lock.authorized',return_value=True),patch('app_lock.request_lock') as lock:
+            serve('<html><body>Fixture</body></html>',opener=opener,pause=lambda _:None)
+            lock.assert_called_once()
+
     def test_missing_age_does_not_export_plaintext(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);source=root/'plain';source.write_bytes(b'private fixture');target=root/'backup.age'

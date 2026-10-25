@@ -26,7 +26,7 @@ sys.path.insert(0,str(_security_folder))
 from pocket_security import private_dir,private_file,harden_tree,encrypt_archive,decrypted_archive,verify_archive,MAX_ARCHIVE_BYTES,MAX_MEMBER_BYTES,MAX_ARCHIVE_MEMBERS
 sys.path.pop(0)
 
-VERSION = '0.2.3-beta'
+VERSION = '0.2.4-beta'
 BOOKS = {'.pdf', '.epub', '.mobi', '.azw', '.azw3', '.txt'}
 MEDIA = {'.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mkv', '.mov', '.3gp'}
 KINDS = ('Income', 'Sale', 'Expense', 'Purchase', 'Debt payment', 'Debt collected')
@@ -844,6 +844,9 @@ if __name__ == '__main__':
     if '--version' in sys.argv:
         print(VERSION)
     else:
+        sys.path.insert(0,str(_security_folder))
+        from app_lock import guard
+        guard()
         try:
             app = App()
             if len(sys.argv)>2 and sys.argv[1]=='--open-url': app.open_url(sys.argv[2])

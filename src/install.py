@@ -9,7 +9,7 @@ from datetime import datetime
 
 def install(package, home, prefix):
     app = home / '.local/share/pocket-toolbox'
-    finance_files=['engine.py','main.py','charts.py','business_board.py','home_board.py','board_actions.py','finance_forms.py','board_server.py','pocket_security.py','cash_import.py','import_ui.py','statement_import.py']
+    finance_files=['engine.py','main.py','charts.py','business_board.py','home_board.py','board_actions.py','finance_forms.py','board_server.py','pocket_security.py','cash_import.py','import_ui.py','statement_import.py','app_lock.py']
     os.umask(0o077)
     compile((package/'src/app.py').read_text(),'app.py','exec')
     for name in finance_files:compile((package/'finance'/name).read_text(),name,'exec')
@@ -17,6 +17,9 @@ def install(package, home, prefix):
     marker = '# Pocket Toolbox launcher'
     if command.exists() and marker not in command.read_text():
         raise RuntimeError('A different pocket command exists; rename it before installing.')
+    for name in ['pocket-lock','pocket-password']:
+        shortcut=prefix/'bin'/name
+        if shortcut.exists() and '# Pocket password launcher' not in shortcut.read_text():raise RuntimeError('A different '+name+' command exists.')
     sys.path.insert(0,str(package/'finance'))
     try:
         from pocket_security import harden_tree
@@ -51,6 +54,11 @@ def install(package, home, prefix):
     command.write_text('#!' + str(prefix / 'bin/bash') + '\n' + marker + '\nexec ' +
                        shlex.quote(str(prefix / 'bin/python')) + ' ' + shlex.quote(str(target)) + ' "$@"\n')
     command.chmod(0o700)
+    for name,argument in [('pocket-lock','--lock'),('pocket-password','--settings')]:
+        shortcut=prefix/'bin'/name
+        if shortcut.exists() and '# Pocket password launcher' not in shortcut.read_text():raise RuntimeError('A different '+name+' command exists.')
+        shortcut.write_text('#!'+str(prefix/'bin/bash')+'\n# Pocket password launcher\nexec '+shlex.quote(str(prefix/'bin/python'))+' '+shlex.quote(str(finance_target/'app_lock.py'))+' '+argument+'\n')
+        shortcut.chmod(0o700)
     print('\nInstalled. Type pocket to start. Existing menus and records were not imported.')
     print('For shared phone files, run termux-setup-storage and allow access.')
 

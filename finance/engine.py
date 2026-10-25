@@ -9,7 +9,7 @@ import json
 import sqlite3
 from pocket_security import private_dir,private_file,private_umask
 
-VERSION = '0.2.3-beta'
+VERSION = '0.2.4-beta'
 STATEMENT_SCHEMA = 'CREATE TABLE IF NOT EXISTS statement_events(source TEXT NOT NULL,event_id TEXT NOT NULL,digest TEXT NOT NULL,record TEXT NOT NULL,cash_id INTEGER REFERENCES cash(id),status TEXT NOT NULL,PRIMARY KEY(source,event_id))'
 
 def decimal(value):
