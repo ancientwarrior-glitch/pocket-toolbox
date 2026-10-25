@@ -97,7 +97,7 @@ class UI:
         if not scope:return
         start=input('Start date (Enter: January 1 this year): ').strip() or f'{date.today().year}-01-01'
         end=self.at(); rows=self.f.cash_report(start,end,scope)
-        operational=[r for r in rows if r['kind'] not in ('Transfer','Investment','Adjustment')]
+        operational=[r for r in rows if r['kind'] not in ('Transfer','Investment','Adjustment','Capital','DebtPayment','Advance','Reimbursement')]
         print('\nMoney in:',self.money(sum(r['delta'] for r in operational if r['delta']>0)))
         print('Money out:',self.money(-sum(r['delta'] for r in operational if r['delta']<0)))
         print('Transfers, investment movements and reconciliation adjustments are shown separately below.')
@@ -427,7 +427,7 @@ Read FINANCE.md in the repository for scope, backups, restore and migration deta
                  ('Savings, investment plans and profit shares',self.plans),('Crypto holdings and portfolio',self.investments),
                  ('Trading plans, journal and linear contracts',self.trading),('Search all finance records',self.search),
                  ('Correct/void a cash entry',self.corrections),('Import original records once',self.legacy),
-                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs),('My Project / business board',self.business_board),('Main toolbox visual dashboard',self.home_board),('Import income/expenses from CSV or Excel',self.import_cash_table)]
+                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs),('My Project / business board',self.business_board),('Main toolbox visual dashboard',self.home_board),('Import records: CSV, Excel or prepared statement',self.import_cash_table)]
         if self.public_root:
             actions[11]=('Import earlier public 0.1 ledger once',self.legacy)
             actions[18]=(self.config.get('project_name','My Project')+' / business board',self.business_board)

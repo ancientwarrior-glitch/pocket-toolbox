@@ -26,7 +26,7 @@ sys.path.insert(0,str(_security_folder))
 from pocket_security import private_dir,private_file,harden_tree,encrypt_archive,decrypted_archive,verify_archive,MAX_ARCHIVE_BYTES,MAX_MEMBER_BYTES,MAX_ARCHIVE_MEMBERS
 sys.path.pop(0)
 
-VERSION = '0.2.2-beta'
+VERSION = '0.2.3-beta'
 BOOKS = {'.pdf', '.epub', '.mobi', '.azw', '.azw3', '.txt'}
 MEDIA = {'.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mkv', '.mov', '.3gp'}
 KINDS = ('Income', 'Sale', 'Expense', 'Purchase', 'Debt payment', 'Debt collected')

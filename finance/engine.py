@@ -9,7 +9,8 @@ import json
 import sqlite3
 from pocket_security import private_dir,private_file,private_umask
 
-VERSION = '0.2.2-beta'
+VERSION = '0.2.3-beta'
+STATEMENT_SCHEMA = 'CREATE TABLE IF NOT EXISTS statement_events(source TEXT NOT NULL,event_id TEXT NOT NULL,digest TEXT NOT NULL,record TEXT NOT NULL,cash_id INTEGER REFERENCES cash(id),status TEXT NOT NULL,PRIMARY KEY(source,event_id))'
 
 def decimal(value):
     try: number = Decimal(str(value).strip())
@@ -88,6 +89,7 @@ class Finance:
         CREATE TABLE IF NOT EXISTS contracts(id INTEGER PRIMARY KEY,scope TEXT,wallet TEXT,symbol TEXT,side TEXT,qty TEXT,multiplier TEXT,entry TEXT,collateral INTEGER,fees INTEGER,funding INTEGER DEFAULT 0,closed TEXT,exit TEXT,realized INTEGER,notes TEXT);
         CREATE TABLE IF NOT EXISTS distributions(id INTEGER PRIMARY KEY,party TEXT,start TEXT,end TEXT,approved_profit INTEGER,rate TEXT,amount INTEGER,invoice INTEGER REFERENCES invoices(id),UNIQUE(party,start,end));
         ''')
+        self.db.execute(STATEMENT_SCHEMA)
         if 'void' not in [r[1] for r in self.db.execute('PRAGMA table_info(cash)')]:
             self.db.execute('ALTER TABLE cash ADD COLUMN void INTEGER DEFAULT 0')
         if 'void_day' not in [r[1] for r in self.db.execute('PRAGMA table_info(invoices)')]:
@@ -173,7 +175,7 @@ class Finance:
     def correct_cash(self,ident,value=None,description=None,at=None,category=None,void=False):
         old=self.db.execute('SELECT * FROM cash WHERE id=?',(ident,)).fetchone()
         if old is None or old['void']: raise ValueError('Active cash entry not found.')
-        if old['ref'] and not old['ref'].startswith(('legacy-entry:','legacy-purchase:')): raise ValueError('This is a linked event. Reverse or correct the originating invoice, transfer or investment instead.')
+        if old['ref'] and not old['ref'].startswith(('legacy-entry:','legacy-purchase:')) and not (old['ref'].startswith('statement:') and old['kind'] in ('Income','Expense','DebtPayment','Investment')): raise ValueError('This is a linked event. Reverse or correct the originating invoice, transfer or investment instead.')
         new=dict(old)
         if value is not None:
             cents=money(value)
@@ -334,11 +336,12 @@ class Finance:
                 if not columns.issubset(actual): raise ValueError('Not a compatible Finance database.')
             needed={r[0] for r in self.db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")}
             present={r[0] for r in check.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            if not needed.issubset(present):raise ValueError('Backup schema is older/incomplete. A reviewed migration is required before restoring it.')
+            if not (needed-{'statement_events'}).issubset(present):raise ValueError('Backup schema is older/incomplete. A reviewed migration is required before restoring it.')
             base=check.execute("SELECT value FROM settings WHERE key='base'").fetchone()
             if not base or base[0]!=self.base: raise ValueError('Backup base currency mismatch.')
             previous=self.backup(backup_folder)
             check.backup(self.db)
+            self.db.execute(STATEMENT_SCHEMA)
             self.db.commit()
             return previous
         finally:check.close()
@@ -406,7 +409,7 @@ class Finance:
                 self._stock(move['item'],-decimal(move['qty']),-move['value'],'Reversal',at,f'void:{invoice}')
             for payment in self.rows('SELECT c.* FROM payments p JOIN cash c ON c.id=p.cash WHERE p.invoice=?',(invoice,)):
                 if at<payment['day']: raise ValueError('Refund cannot predate a payment.')
-                self._cash(payment['account'],-payment['delta'],'Refund',reason,at,payment['category'],ref=f'void:{invoice}')
+                self._cash(payment['account'],-payment['delta'],payment['kind'] if payment['kind'] in ('Capital','Reimbursement') else 'Refund',reason,at,payment['category'],ref=f'void:{invoice}')
             self.db.execute('UPDATE invoices SET void=1,void_day=? WHERE id=?',(at,invoice))
 
     def cash_report(self,start,end,scope):
@@ -698,7 +701,7 @@ class Finance:
     def export(self,folder):
         folder=Path(folder)/('finance-export-'+datetime.now().strftime('%Y%m%d-%H%M%S-%f'))
         folder.mkdir(parents=True)
-        tables=['accounts','categories','cash','budgets','envelopes','items','stock','invoices','payments','credits','batches','sales','positions','holding_moves','investment_events','prices','trade_plans','contracts','distributions','journal','audit']
+        tables=['accounts','categories','cash','budgets','envelopes','items','stock','invoices','payments','credits','batches','sales','positions','holding_moves','investment_events','prices','trade_plans','contracts','distributions','journal','audit','statement_events']
         for table in tables:
             cursor=self.db.execute('SELECT * FROM '+table)
             with (folder/(table+'.csv')).open('w',newline='',encoding='utf-8-sig') as out:

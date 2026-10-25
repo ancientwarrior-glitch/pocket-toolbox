@@ -11,19 +11,32 @@ def numbers(text,valid):
     return chosen
 
 def run(ui):
-    ui.heading('IMPORT CASH RECORDS — CSV / XLSX')
-    print('Local income/expense import. No file is uploaded. Original files are unchanged.')
-    print('Transfers, investments, stock purchases and invoice payments belong in their dedicated tools.')
+    ui.heading('IMPORT RECORDS — CSV / XLSX / PREPARED JSON')
+    print('CSV/XLSX: income/expenses. Prepared JSON: cash roles and saved review events. Local only.')
+    print('For CSV/XLSX, exclude transfers, investments, stock and linked invoice payments; use their dedicated tools.')
     print('Import each movement once. Opening balance must be BEFORE imported movements.')
     downloads=Path(getattr(ui,'downloads',Path.home()/'storage/downloads'))
-    files=sorted((p for p in downloads.iterdir() if p.is_file() and p.suffix.lower() in ('.csv','.tsv','.xlsx')),key=lambda p:p.stat().st_mtime,reverse=True)[:50] if downloads.is_dir() else []
+    files=sorted((p for p in downloads.iterdir() if p.is_file() and p.suffix.lower() in ('.csv','.tsv','.xlsx','.json')),key=lambda p:p.stat().st_mtime,reverse=True)[:50] if downloads.is_dir() else []
     for i,p in enumerate(files,1):print(f'{i:>3}  {p.name}')
-    answer=input('\nFile number, full path, or Enter to cancel: ').strip()
+    answer=input('\nFile number, full path, R for saved events, or Enter to cancel: ').strip()
     if not answer:return
+    if answer.lower()=='r':
+        import json
+        from statement_import import review_records
+        rows=review_records(ui.f)
+        if not rows:print('No prepared statement events saved yet.')
+        for i,row in enumerate(rows,1):
+            print(row['status'], '|', json.dumps(json.loads(row['record']),ensure_ascii=False))
+            if i%10==0 and i<len(rows):
+                if input('Enter: next page | q: stop: ').strip().lower()=='q':break
+        ui.pause();return
     if answer.isdigit():
         if not 1<=int(answer)<=len(files):raise ValueError('Choose a listed file number.')
         path=files[int(answer)-1]
     else:path=Path(answer.strip('"\'')).expanduser()
+    if path.suffix.lower()=='.json':
+        from statement_import import run as statement_run
+        statement_run(ui,path);return
     sheet=None;delimiter=',';encoding='utf-8-sig'
     if path.suffix.lower()=='.xlsx':
         selected=ui.choose(workbook(path)[0],lambda r:r[0])

@@ -9,7 +9,7 @@ from datetime import datetime
 
 def install(package, home, prefix):
     app = home / '.local/share/pocket-toolbox'
-    finance_files=['engine.py','main.py','charts.py','business_board.py','home_board.py','board_actions.py','finance_forms.py','board_server.py','pocket_security.py','cash_import.py','import_ui.py']
+    finance_files=['engine.py','main.py','charts.py','business_board.py','home_board.py','board_actions.py','finance_forms.py','board_server.py','pocket_security.py','cash_import.py','import_ui.py','statement_import.py']
     os.umask(0o077)
     compile((package/'src/app.py').read_text(),'app.py','exec')
     for name in finance_files:compile((package/'finance'/name).read_text(),name,'exec')

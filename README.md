@@ -1,4 +1,4 @@
-# Pocket Toolbox — 0.2.2 beta — Finance, boards & private backups
+# Pocket Toolbox — 0.2.3 beta — Finance, boards & private backups
 
 A numbered personal workstation for Termux on Android. Distributed as an empty, configurable starter kit.
 
@@ -152,7 +152,7 @@ python -m unittest discover -s tests -v
 python -m unittest discover -s finance -v
 ```
 
-Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.2 is a beta**, with blank records and no private configuration bundled.
+Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.3 is a beta**, with blank records and no private configuration bundled.
 
 ## Support
 
@@ -171,3 +171,29 @@ The launcher is `$PREFIX/bin/pocket`. App code/settings/records are in `~/.local
 - Termux installation: https://github.com/termux/termux-app#installation
 - Newsboat manual: https://newsboat.org/releases/2.42/docs/newsboat.html
 - Termux file handoff: https://github.com/termux/termux-app/issues/4723
+
+
+## Prepared statements (0.2.3 beta)
+
+The import action also accepts `pocket-statement-v1` JSON. Choose a file, read the paged preview, then type `IMPORT` to confirm. Enter `R` in the file-selection prompt to read saved source and review records. No file is uploaded.
+
+A statement contains `format`, a stable `source`, `currency` matching the Finance base currency, optional `notes`, and an `events` array (1–10,000 events; file at most 16 MiB). Each event needs a unique stable `id`, ISO `date`, `description`, `scope` (`Personal`/`Business`) and `kind`. Cash amounts are signed decimal strings with at most two decimals. Optional fields are `category`, `party`, `group`, `note` and an `evidence` object. No arbitrary actions or code are executed.
+
+Supported kinds:
+
+- `Income` / `Expense`: ordinary cash, optional categories.
+- `Capital`: positive funding cash, linked to a fully received Capital invoice; excluded from sales/profit.
+- `DebtPayment`: historical negative debt-payment cash. The source record preserves the creditor and an explicit unknown-balance status. It does **not** reduce an existing invoice or establish an outstanding debt. Reconcile the opening/current debt separately when known.
+- `Advance` / `Reimbursement`: one negative advance plus one or more later positive repayments with the same `group` and scope. Creates a receivable and links repayments; overpayment is rejected. Each file must carry the complete group, including on repeat import.
+- `Investment`: signed investment cash observation only. It creates no asset quantity, cost basis, fee, trade gain or position. Do not separately import the same cash leg as a trade.
+- `Review`: retains original evidence without posting cash. Use for provider-only lines, unresolved cancellations and crypto observations.
+
+Historical accounts are created with names ending in `opening balance unknown`; their movements are useful history but their totals are not available cash. The dashboard excludes these accounts from established balances. Capital, debt payments, advances, reimbursements and investments remain outside ordinary money-in/out totals. Ordinary purchases with unknown purpose can be explicitly imported as uncategorized; no stock items or business use are inferred.
+
+Exact source/event IDs skip on repeat. Changed IDs with changed contents are blocked; potential existing cash duplicates block the import for reconciliation. Stable IDs cannot detect every overlap across independently prepared files, so review sources carefully. The importer saves a private pre-import SQLite snapshot and commits the entire selected file atomically. Full table exports include `statement_events.csv`. Ordinary imported income/expenses can be corrected with the cash editor; funding and reimbursement invoices use linked invoice corrections. Review observations are preserved read-only in this beta; replacing a prepared source file does not edit already imported records.
+
+A minimal generic example:
+
+```json
+{"format":"pocket-statement-v1","source":"my-provider-history","currency":"MXN","events":[{"id":"example-1","date":"2026-01-01","description":"Example expense","scope":"Personal","kind":"Expense","amount":"-10.00","category":"Food"}]}
+```

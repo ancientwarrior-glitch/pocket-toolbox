@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3 beta — 2026-10-25
+
+- Prepared JSON statements now preserve source evidence and review events alongside explicitly classified cash movements. Preview, stable event receipts, changed-ID rejection, atomic saves and pre-import snapshots protect records.
+- Funding, historical debt payments, matched advances/reimbursements and investment cash stay separate from ordinary income/expenses. Unknown historical opening/debt balances and crypto basis are not inferred.
+- Import menu R reads saved statement events. Full-table exports and compatible snapshot restores preserve them. Available through the existing public Finance 21 / original Finance 23 import action.
+
 ## 0.2.2 beta — 2026-10-25
 
 - Added local CSV/XLSX income/expense import with worksheet/header selection, column matching, explicit formats/units, previews, row exclusions and confirmation.
