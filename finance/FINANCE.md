@@ -1,4 +1,4 @@
-# Pocket Finance — 0.2.0-beta.1 for the ORIGINAL toolbox
+# Pocket Finance — 0.2.0-beta.2 for the ORIGINAL toolbox
 
 This is an additional, offline financial record system for people running the original `menu` scripts. The stable public `pocket` starter is not replaced. Finance is a set of financial workflows and reports, not an Excel cell-grid/formula editor.
 
@@ -47,6 +47,23 @@ Use the new Finance system for subsequent financial records. Its database is sep
 15. Help.
 16. Restore a compatible finance snapshot, preserving a pre-restore copy.
 17. Import normalized trading CSV.
+18. Graphs / visual dashboard.
+
+## Graphs
+
+Option 18 opens a read-only browser dashboard with cash balances, money-in/money-out bars, category outflows, portfolio values, expense-budget progress and savings goals. Filter Personal/Business, account and period; tap graph points for exact figures. It uses saved records and manual prices, so it works offline. Unknown valuations are gaps rather than made-up zeros, and empty logs show explicit empty states. Imported accounts with unknown opening balances are excluded from the cash-balance graph.
+
+The dashboard starts a small temporary server bound only to `127.0.0.1`, serving one random URL. It has no external scripts, fonts, CDNs or price calls. Keep the terminal screen open until the page loads; return and press Enter when finished to stop the server. The already loaded page can continue filtering its in-memory snapshot. Reopen Graphs to refresh records. No screenshots or report exports are uploaded.
+
+To update an already installed beta, exit Finance, then run:
+
+```bash
+git -C "$HOME/pocket-finance-beta" pull --ff-only
+python "$HOME/pocket-finance-beta/finance/install_original.py"
+finance
+```
+
+The update copies the chart module alongside the existing engine/UI and keeps the finance database intact.
 
 ## Money and business accounting
 

@@ -16,7 +16,7 @@ def plan_install(package,home,prefix):
     command=prefix/'bin/finance'
     if command.exists() and MARKER not in command.read_text():raise ValueError('A different finance command already exists.')
     target=home/'bin/pocket-finance'
-    for name in ['engine.py','main.py']:
+    for name in ['engine.py','main.py','charts.py']:
         compile((package/name).read_text(),str(package/name),'exec')
     run='["python", str(Path.home() / "bin/pocket-finance/main.py")'
     changes=[]
@@ -65,7 +65,7 @@ def install(package,home,prefix):
     purchase=legacy.with_name('purchases.csv')
     if purchase.exists():shutil.copy2(purchase,backup/'original-purchases.csv')
     target.mkdir(parents=True,exist_ok=True)
-    for name in ['engine.py','main.py']:
+    for name in ['engine.py','main.py','charts.py']:
         installed=target/name
         if installed.exists():shutil.copy2(installed,backup/('previous-'+name))
         shutil.copy2(package/name,installed)
