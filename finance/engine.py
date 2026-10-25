@@ -9,7 +9,7 @@ import json
 import sqlite3
 from pocket_security import private_dir,private_file,private_umask
 
-VERSION = '0.2.1-beta'
+VERSION = '0.2.2-beta'
 
 def decimal(value):
     try: number = Decimal(str(value).strip())

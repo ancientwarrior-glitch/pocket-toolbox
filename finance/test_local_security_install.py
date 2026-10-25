@@ -51,6 +51,8 @@ class LocalInstallTests(unittest.TestCase):
             self.assertEqual(note.read_text(),'private fixture');self.assertEqual(note.stat().st_mode&0o777,0o600)
             self.assertEqual((target/'main.py').read_text().count(MARKER),1)
             self.assertTrue((target/'board_server.py').exists());self.assertTrue((target/'secure_backup.py').exists())
+            self.assertTrue((target/'cash_import.py').exists());self.assertTrue((target/'import_ui.py').exists())
+            self.assertEqual((target/'main.py').read_text().count('self.import_cash_table'),1)
             self.assertIn('secure_compat.py" backup',(prefix/'bin/menu').read_text())
             self.assertEqual(len(list((data/'Finance/Installer-Backups').glob('security-*'))),2)
 

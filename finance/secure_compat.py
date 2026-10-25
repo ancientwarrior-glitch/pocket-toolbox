@@ -92,7 +92,12 @@ def restore(ui):
 def export(ui):
     print('Private CSV export:',ui.f.export(ui.root/'Exports'));ui.pause()
 
+def import_cash_table(ui):
+    from import_ui import run
+    run(ui)
+
 def enhance_ui(cls):
+    cls.import_cash_table=import_cash_table
     cls.secure_backup=backup;cls.secure_restore=restore;cls.export=export
 
 if __name__=='__main__':

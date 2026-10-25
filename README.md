@@ -1,4 +1,4 @@
-# Pocket Toolbox — 0.2.1 beta — Finance, boards & private backups
+# Pocket Toolbox — 0.2.2 beta — Finance, boards & private backups
 
 A numbered personal workstation for Termux on Android. Distributed as an empty, configurable starter kit.
 
@@ -108,6 +108,18 @@ Restore accepts this kit's encrypted `pocket-*.tar.gz.age` archives and earlier 
 
 The program has no telemetry or automatic publishing. Network activity occurs when using RSS, video lookup or external links. The duplicate finder hashes candidates and writes a report without deleting anything. File search uses names and record text; PDF search can read existing PDF text and normalizes whitespace, but does not perform OCR on scanned images. Large scans can take time/memory.
 
+## Import income and expense records
+
+Public Finance option **21** opens a local CSV/XLSX importer. Original-menu users get it at **23** after pulling and rerunning `finance/install_security.py` from their update checkout. No records or files are sent to the repository.
+
+Choose a recent file from Downloads or enter its full path. For CSV choose delimiter and UTF-8 or Windows-1252 encoding; for Excel choose the sheet. Set the header row, match columns, select date/number formats and normal currency units versus whole cents, then choose an existing account. Amounts can be signed, separate debit/credit, or positive income-only/expense-only. Optional columns are category, stable transaction ID, currency and Income/Expense type. New category names are listed before confirmation.
+
+The preview validates all included rows and shows their dates, amounts, categories and duplicate status. You can exclude source row numbers for transfers, totals, trades and already linked invoice/stock payments. Invalid included rows block the entire import. Review account opening dates/balances to avoid counting historical movements twice. Only type `IMPORT` after checking the preview. A private Finance snapshot is made before the atomic save; the source file is unchanged.
+
+Reuse the same source label for future files from the same account/provider. Stable IDs prevent repeated imports and reject changed records under an already imported ID. Without IDs, exact normalized rows and their occurrence counts are recognized, but edits may look new. Matches against existing account/date/amount/description are flagged and skipped unless you explicitly include their source row numbers. These are review aids, not a guarantee of finding every duplicate; different descriptions, source labels and edited no-ID rows require care.
+
+This imports **cash income/expenses**, not stock, invoices, investment positions, transfers, or arbitrary spreadsheet formulas. Trading imports remain under Finance 17. XLSX formula/error cells in mapped columns are refused: use a copy with calculated values pasted, or a CSV export. Old `.xls` files need conversion. Limits: 16 MiB input, 32 MiB expanded XLSX, 10000 data rows, 256 columns; no automatic FX conversion. Excel dates stored as numbers need the Excel serial date option. Compatible encrypted backups remain the route for a complete records restore.
+
 ## Security update for an earlier original-menu installation
 
 This optional updater reads and edits supported scripts **locally**; it does not upload them. Existing records and private project names stay on the phone. It does not replace the original menus with public defaults.
@@ -121,7 +133,7 @@ python "$HOME/pocket-security-update/finance/install_security.py"
 menu
 ```
 
-If that update checkout already exists, pull it with `git -C "$HOME/pocket-security-update" pull --ff-only` instead of cloning again. The Finance menu gains encrypted backup/restore entries at its end (21/22 on the standard layout). Option 21 opens Create, Verify, Share, Show folder and Restore. Rerun the updater after pulling to add this submenu to an already updated original installation. Existing `toolbox-private-*.tar.gz.age` files remain in Downloads/Termux-Backups. Verification restores nothing; sharing verifies first and opens Android’s chooser for the encrypted file only. Recognized simple main-menu backup/restore handlers are redirected. Unknown/custom handlers and older backup widgets may still create plaintext; use the new Finance backup entry explicitly. Previous scripts are saved privately before replacement. Unknown source layouts stop before changing scripts.
+If that update checkout already exists, pull it with `git -C "$HOME/pocket-security-update" pull --ff-only` instead of cloning again. The Finance menu gains encrypted backup/restore entries at its end (21/22 on the standard layout). Option 21 opens Create, Verify, Share, Show folder and Restore. Option 23 imports income/expense tables from CSV or XLSX, using the existing account setup. Rerun the updater after pulling to add this submenu to an already updated original installation. Existing `toolbox-private-*.tar.gz.age` files remain in Downloads/Termux-Backups. Verification restores nothing; sharing verifies first and opens Android’s chooser for the encrypted file only. Recognized simple main-menu backup/restore handlers are redirected. Unknown/custom handlers and older backup widgets may still create plaintext; use the new Finance backup entry explicitly. Previous scripts are saved privately before replacement. Unknown source layouts stop before changing scripts.
 
 The encrypted bundle covers the existing records root, toolbox scripts, main menu, widget launchers and RSS files. Books/media outside these roots and shell profiles need their own backups. Restoring a bundle requires its passphrase and creates a new encrypted pre-restore backup. The old compatibility branch remains separate; this local updater is the security upgrade path.
 
@@ -140,7 +152,7 @@ python -m unittest discover -s tests -v
 python -m unittest discover -s finance -v
 ```
 
-Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.1 is a beta**, with blank records and no private configuration bundled.
+Checks cover the generic installer/upgrade, customized board paths, legacy debt imports, SQLite backups/restores, linked stock/sales/payments, returns, basis, idempotent form saves and local API restrictions. The underlying boards and forms were checked by the author on his Android phone before generic packaging. The generic integration is covered by automated desktop checks and still needs testing on more phone/reader/player setups. Version **0.2.2 is a beta**, with blank records and no private configuration bundled.
 
 ## Support
 

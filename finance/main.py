@@ -369,6 +369,10 @@ class UI:
         if path and input('Type RESTORE to replace current finance records: ')=='RESTORE':
             print('Pre-restore snapshot:',self.f.restore(path,self.root/'Backups'));self.pause()
     def export(self):print('Saved:',self.f.export(self.root/'Exports'));self.pause()
+    def import_cash_table(self):
+        from import_ui import run
+        run(self)
+
     def import_trades(self):
         print('Use the normalized template in finance/trades-template.csv. Exchange-specific exports must be mapped to it first.')
         print('Amounts are in the base currency; fees are base-currency values. Rows require stable source + ID and chronological dates.')
@@ -423,7 +427,7 @@ Read FINANCE.md in the repository for scope, backups, restore and migration deta
                  ('Savings, investment plans and profit shares',self.plans),('Crypto holdings and portfolio',self.investments),
                  ('Trading plans, journal and linear contracts',self.trading),('Search all finance records',self.search),
                  ('Correct/void a cash entry',self.corrections),('Import original records once',self.legacy),
-                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs),('My Project / business board',self.business_board),('Main toolbox visual dashboard',self.home_board)]
+                 ('Back up finance database',self.backup),('Export all tables to CSV',self.export),('Help and limitations',self.help),('Restore a finance snapshot',self.restore),('Import normalized trading CSV',self.import_trades),('Graphs / visual dashboard',self.graphs),('My Project / business board',self.business_board),('Main toolbox visual dashboard',self.home_board),('Import income/expenses from CSV or Excel',self.import_cash_table)]
         if self.public_root:
             actions[11]=('Import earlier public 0.1 ledger once',self.legacy)
             actions[18]=(self.config.get('project_name','My Project')+' / business board',self.business_board)

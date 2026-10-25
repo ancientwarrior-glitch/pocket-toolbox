@@ -35,7 +35,7 @@ class CompatBackupTests(unittest.TestCase):
         with patch.object(compat,'roots',return_value={}),patch.object(compat,'backup_bundle',return_value=self.path),patch.object(compat,'verify') as verify,patch('builtins.input',return_value='v'),redirect_stdout(io.StringIO()):compat.create(self.ui)
         verify.assert_called_once_with(self.ui,self.path)
     def test_installer_upgrades_existing_menu_label(self):
-        text=MARKER+"\nactions.extend([('Encrypted full toolbox backup',self.secure_backup)])\n"
+        text=MARKER+"\nactions.extend([('Encrypted full toolbox backup',self.secure_backup),('Restore encrypted full toolbox backup',self.secure_restore)])\n"
         changed=patch_main(text)
         self.assertIn('Encrypted backups: create, verify and share',changed)
         self.assertEqual(changed.count('actions.extend'),1)

@@ -1,4 +1,4 @@
-# Pocket Finance 0.2.1 beta
+# Pocket Finance 0.2.2 beta
 
 Included in public Pocket Toolbox. Install/update using the root README and install.sh. The separate original-menu compatibility installer is not part of this public package. A generic `install_security.py` can harden an existing supported installation locally without uploading its scripts; see the root README.
 
@@ -39,3 +39,7 @@ This is a multi-year recordkeeping and planning application, not an Excel formul
 ## Security update
 
 Full toolbox backups now use age encryption; install/update through install.sh to get age. Finance-only snapshots and CSV exports stay in private Finance/Backups and Finance/Exports. Live records are not an encrypted vault. Boards enforce expiry and browser restrictions; see SECURITY.md. Older plaintext files are not removed automatically.
+
+## CSV/XLSX cash importer
+
+Public Finance 21 (original upgraded menu: 23) provides file selection, worksheet/header choice, column mapping, explicit number/date/unit formats, account choice, paged preview and confirmation. It imports income/expenses only. Existing stable source IDs are skipped; changed IDs block the import. No-ID rows use normalized contents plus occurrence count. Possible matches with existing cash are skipped by default and require explicit row selection to override. Invalid included rows block the whole import; exclude totals/transfers/linked payments or correct the source. New category names are shown before saving. A private pre-import Finance snapshot is retained and cash/categories/import receipts save in one transaction. No formulas, automatic currency conversion or direct .xls support. See root README for limits and duplicate caveats.

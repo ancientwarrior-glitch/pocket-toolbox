@@ -10,12 +10,16 @@ import sys
 from pocket_security import private_dir,harden_tree,private_umask,no_links
 
 MARKER='# Pocket local security update 0.2.1'
-FILES=['engine.py','charts.py','board_server.py','pocket_security.py','secure_backup.py','secure_compat.py']
+FILES=['engine.py','charts.py','board_server.py','pocket_security.py','secure_backup.py','secure_compat.py','cash_import.py','import_ui.py']
 
 def patch_main(text):
     if MARKER in text:
         text=text.replace("('Encrypted full toolbox backup',self.secure_backup)",
                           "('Encrypted backups: create, verify and share',self.secure_backup)")
+        if 'self.import_cash_table' not in text:
+            needle="('Restore encrypted full toolbox backup',self.secure_restore)])"
+            if needle not in text:raise ValueError('Unsupported upgraded menu layout. No scripts were changed.')
+            text=text.replace(needle,"('Restore encrypted full toolbox backup',self.secure_restore),('Import income/expenses from CSV or Excel',self.import_cash_table)])")
         compile(text,'main.py','exec');return text
     tree=ast.parse(text)
     cls=next((n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='UI'),None)
@@ -24,7 +28,7 @@ def patch_main(text):
     if len(assignments)!=1:raise ValueError('Unsupported local menu layout. No scripts were changed.')
     lines=text.splitlines(keepends=True);assignment=assignments[0]
     indent=re.match(r'\s*',lines[assignment.lineno-1])[0]
-    lines.insert(assignment.end_lineno,indent+"actions.extend([('Encrypted backups: create, verify and share',self.secure_backup),('Restore encrypted full toolbox backup',self.secure_restore)])\n")
+    lines.insert(assignment.end_lineno,indent+"actions.extend([('Encrypted backups: create, verify and share',self.secure_backup),('Restore encrypted full toolbox backup',self.secure_restore),('Import income/expenses from CSV or Excel',self.import_cash_table)])\n")
     text=''.join(lines)
     match=re.search(r'^if __name__\s*==',text,re.M)
     if not match:raise ValueError('Local entry point was not recognized. No scripts were changed.')
@@ -89,7 +93,7 @@ def install(package,home,prefix):
         raise
     print('Local security update installed. Records were not uploaded or imported.')
     print('Previous scripts saved privately:',backup)
-    print('Run: pkg install age. Restart menu. Finance option 21 opens Create / Verify / Share / Show folder; option 22 restores.')
+    print('Run: pkg install age. Restart menu. Finance option 21 opens Create / Verify / Share / Show folder; option 22 restores; option 23 imports CSV/XLSX income and expenses.')
     print('Recognized backup buttons are redirected. Unknown shell layouts remain unchanged; use the Finance options.')
 
 if __name__=='__main__':

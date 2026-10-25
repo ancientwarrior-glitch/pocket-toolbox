@@ -1,6 +1,14 @@
 # Changelog
 
+## 0.2.2 beta — 2026-10-25
+
+- Added local CSV/XLSX income/expense import with worksheet/header selection, column matching, explicit formats/units, previews, row exclusions and confirmation.
+- Stable source identities, possible-duplicate review, validation and private pre-import snapshots protect existing records; database saves are atomic.
+- Available at public Finance 21 and original Finance 23 through the local updater. No new dependencies or uploads.
+
 ## 0.2.1 beta — 2026-10-25
+
+- Original-menu local updater: Finance backup submenu now includes Create, Verify, Share and Show folder; rerunning updates the existing menu label without duplicating entries.
 
 - Backup usability: named Create/Verify/Share/Show folder actions, generated-passphrase guidance, immediate verification after creation, and verification before Android sharing. No manual verification snippets are required.
 
@@ -22,5 +30,3 @@
 ## 0.1.0
 
 Initial configurable terminal toolbox with books, notes, journals, RSS, project records and backups.
-
-- Original-menu local updater: Finance backup submenu now includes Create, Verify, Share and Show folder; rerunning updates the existing menu label without duplicating entries.
