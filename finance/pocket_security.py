@@ -19,9 +19,17 @@ def private_umask():
 
 def no_links(path):
     path=Path(path).absolute()
-    if any(p.is_symlink() for p in [path,*path.parents]):
-        raise ValueError('Private records must not use symbolic links.')
-    return path
+    home=Path.home().absolute()
+    try:relative=path.relative_to(home)
+    except ValueError:
+        if any(p.is_symlink() for p in [path,*path.parents]):raise ValueError('Private records must not use symbolic links.')
+        return path
+    # Android can alias the app/home path. Trust that base, but reject links below it.
+    current=home
+    for part in relative.parts:
+        current=current/part
+        if current.is_symlink():raise ValueError('Private records must not use symbolic links.')
+    return home.resolve()/relative
 
 
 def private_dir(path):

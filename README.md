@@ -106,6 +106,23 @@ Restore accepts this kit's encrypted `pocket-*.tar.gz.age` archives and earlier 
 
 The program has no telemetry or automatic publishing. Network activity occurs when using RSS, video lookup or external links. The duplicate finder hashes candidates and writes a report without deleting anything. File search uses names and record text; PDF search can read existing PDF text and normalizes whitespace, but does not perform OCR on scanned images. Large scans can take time/memory.
 
+## Security update for an earlier original-menu installation
+
+This optional updater reads and edits supported scripts **locally**; it does not upload them. Existing records and private project names stay on the phone. It does not replace the original menus with public defaults.
+
+Close the running boards/menus, then run:
+
+```bash
+pkg install -y git age
+git clone --depth 1 https://github.com/ancientwarrior-glitch/pocket-toolbox.git "$HOME/pocket-security-update"
+python "$HOME/pocket-security-update/finance/install_security.py"
+menu
+```
+
+If that update checkout already exists, pull it with `git -C "$HOME/pocket-security-update" pull --ff-only` instead of cloning again. The Finance menu gains encrypted full-backup/restore entries at its end (21/22 on the standard layout). Recognized simple main-menu backup/restore handlers are redirected. Unknown/custom handlers and older backup widgets may still create plaintext; use the new Finance backup entry explicitly. Previous scripts are saved privately before replacement. Unknown source layouts stop before changing scripts.
+
+The encrypted bundle covers the existing records root, toolbox scripts, main menu, widget launchers and RSS files. Books/media outside these roots and shell profiles need their own backups. Restoring a bundle requires its passphrase and creates a new encrypted pre-restore backup. The old compatibility branch remains separate; this local updater is the security upgrade path.
+
 ## Security and privacy
 
 Boards expire after 15 minutes without loading/saving and after one hour total. A Lock now button closes the session. Browser code attempts to blank/lock after 60 seconds hidden; suspended mobile timers cannot guarantee immediate background locking. Private files use owner-only permissions, and symbolic private-data paths are refused. CSV Finance exports now stay in `data/Finance/Exports`; Finance-only snapshots stay privately in `data/Finance/Backups`.

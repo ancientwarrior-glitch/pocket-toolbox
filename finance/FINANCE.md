@@ -1,6 +1,6 @@
 # Pocket Finance 0.2.1 beta
 
-Included in public Pocket Toolbox. Install/update using the root README and install.sh. The separate original-menu compatibility installer is not part of this public package.
+Included in public Pocket Toolbox. Install/update using the root README and install.sh. The separate original-menu compatibility installer is not part of this public package. A generic `install_security.py` can harden an existing supported installation locally without uploading its scripts; see the root README.
 
 ## Start
 

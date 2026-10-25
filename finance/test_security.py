@@ -28,6 +28,15 @@ class SecurityTests(unittest.TestCase):
             (root/'link').symlink_to(root/'secret.txt')
             with self.assertRaises(ValueError):harden_tree(root)
 
+    def test_trusted_home_alias_does_not_allow_record_symlinks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);real=root/'real';real.mkdir();alias=root/'home';alias.symlink_to(real,target_is_directory=True)
+            with patch('pathlib.Path.home',return_value=alias):
+                private_dir(alias/'records')
+                self.assertTrue((real/'records').is_dir())
+                (real/'records/link').symlink_to(root/'outside')
+                with self.assertRaises(ValueError):harden_tree(alias/'records')
+
     def test_csp_hashes_match_scripts_and_styles(self):
         page='<html><body><style>body{color:red}</style><script>console.log("fixture")</script></body></html>'
         payload,csp=protect_page(page,'/test-session',900)
