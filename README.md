@@ -119,7 +119,7 @@ Checks cover the generic installer/upgrade, customized board paths, legacy debt 
 
 ## Support
 
-Free and open source. Contribution and donation-status information: [SUPPORT.md](SUPPORT.md).
+Free and open source. If Pocket Toolbox helps you, you can support its development with Monero (XMR): [Donate or contribute](SUPPORT.md).
 
 ## Share it
 
