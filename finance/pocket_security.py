@@ -122,3 +122,16 @@ def decrypted_archive(source,private_root):
                 if process.poll() is None:process.terminate()
                 process.wait()
                 if process.stdout:process.stdout.close()
+
+
+def require_plain_storage(home):
+    """Old-format installers must not overwrite encryption-aware record writers."""
+    import json
+    if any((Path(home)/root/'.pocket-vault-required').exists() for root in ['Everyday','.config/books-menu']):raise ValueError('Encrypted working-record markers exist. This generic updater is incompatible; nothing was replaced.')
+    path=Path(home)/'.config/pocket-toolbox-lock/password.json'
+    no_links(path)
+    if not path.exists():return
+    if path.stat().st_size>16384:raise ValueError('Privacy settings are invalid. Update stopped before changing files.')
+    try:record=json.loads(path.read_text())
+    except (ValueError,OSError) as error:raise ValueError('Could not verify privacy settings. Update stopped.') from error
+    if not isinstance(record,dict) or record.get('vault') is not None:raise ValueError('Working-record encryption is configured. This generic updater is not compatible; keep the current scripts and use an encryption-aware update. Nothing was replaced.')

@@ -212,3 +212,7 @@ Original-menu users update their checkout, then run `python "$HOME/pocket-securi
 The lock verifier lives in Termux internal storage at `~/.config/pocket-toolbox-lock`, separate from record backups. On a fresh device, restore compatible records and choose a new toolbox password; old encrypted-backup passphrases are still needed to decrypt those backups. There is no online recovery service. Editing/removing a verifier is possible for someone with shell access; this is why it must not be confused with data encryption.
 
 Future work and the planned app direction are tracked in [ROADMAP.md](ROADMAP.md).
+
+### Compatibility with encrypted-record installations
+
+The generic installers refuse to overwrite an installation marked for working-record encryption, including an interrupted migration. Keep its encryption-aware scripts and recovery kit. The public starter still provides interface password locking and encrypted backups; it does not automatically enable working-record encryption.

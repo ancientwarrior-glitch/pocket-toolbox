@@ -7,7 +7,7 @@ import os
 import re
 import shutil
 import sys
-from pocket_security import private_dir,harden_tree,private_umask,no_links
+from pocket_security import private_dir,harden_tree,private_umask,no_links,require_plain_storage
 
 MARKER='# Pocket local security update 0.2.1'
 FILES=['engine.py','charts.py','board_server.py','pocket_security.py','secure_backup.py','secure_compat.py','cash_import.py','import_ui.py','statement_import.py','app_lock.py']
@@ -59,6 +59,7 @@ def patch_shell(text):
 
 def install(package,home,prefix):
     private_umask();package=Path(package);home=Path(home);prefix=Path(prefix)
+    require_plain_storage(home)
     target=no_links(home/'bin/pocket-finance');main=target/'main.py'
     if not main.is_file():raise ValueError('An existing original Finance installation was not found. Public pocket users use install.sh instead.')
     for name in FILES:compile((package/name).read_text(),name,'exec')

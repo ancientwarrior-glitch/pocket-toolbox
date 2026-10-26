@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 from datetime import datetime
-from pocket_security import private_dir,no_links
+from pocket_security import private_dir,no_links,require_plain_storage
 from app_lock import MARKER
 
 KNOWN={'pocket','menu','finance','rss','books','book','everyday','jabones','budget','organizer','toolbox-home','dashboard'}
@@ -37,8 +37,9 @@ def shell_guard(text,home,prefix):
     block=(MARKER+'\n'+py+' '+gate+' --check || exec '+py+' '+gate+' -- '+shell+' "$0" "$@"\n')
     lines=text.splitlines(keepends=True);lines.insert(1 if lines and lines[0].startswith('#!') else 0,block);return ''.join(lines)
 
-def install(package,home,prefix):
+def install(package,home,prefix,allow_encrypted=False):
     package,home,prefix=map(Path,(package,home,prefix))
+    if not allow_encrypted:require_plain_storage(home)
     source=package/'app_lock.py';compile(source.read_text(),'app_lock.py','exec')
     candidates=[]
     for base in [home/'bin',prefix/'bin']:

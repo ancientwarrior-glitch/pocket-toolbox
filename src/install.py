@@ -22,7 +22,8 @@ def install(package, home, prefix):
         if shortcut.exists() and '# Pocket password launcher' not in shortcut.read_text():raise RuntimeError('A different '+name+' command exists.')
     sys.path.insert(0,str(package/'finance'))
     try:
-        from pocket_security import harden_tree
+        from pocket_security import harden_tree,require_plain_storage
+        require_plain_storage(home)
         harden_tree(app)
     finally:sys.path.pop(0)
     target = app / 'app.py'

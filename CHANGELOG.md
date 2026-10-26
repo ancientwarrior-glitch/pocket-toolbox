@@ -1,5 +1,9 @@
 # Changelog
 
+## Compatibility safeguard — 2026-10-26
+
+- Generic installers now stop before overwriting an installation with encrypted working records, including interrupted enrollment or missing password metadata. This does not add working-record encryption to the public starter.
+
 ## 0.2.4 beta — 2026-10-25
 
 - Added password-gated terminal sessions using salted scrypt password verification. First launch creates a separate toolbox password; each new session requires it.
